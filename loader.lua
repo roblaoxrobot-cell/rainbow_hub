@@ -1,5 +1,5 @@
 -- =========================================================
---  RAINBOW HUB — Loader (games selector)
+--  RAINBOW HUB — Loader (games selector) v1.1
 -- =========================================================
 
 local REPO   = "roblaoxrobot-cell/rainbow_hub"
@@ -51,6 +51,7 @@ local Status = {
     UNIVERSAL="In development", RIVALS="Working", FLUXOPVP="Working",
     MM2="Working", SELLLEMONS="Working", PENABLOX="Working",
     EUROPHIUM="Working", SULTANISIMUS="Working", NINJALEGENDS="Working",
+    BLOXSTRIKE="Working",
 }
 local function StatusColor(t)
     t = (t or ""):lower()
@@ -127,7 +128,7 @@ CountLbl.BackgroundTransparency = 1
 CountLbl.FontFace, CountLbl.TextSize = FontSB, 10
 CountLbl.TextColor3 = Colors.Muted
 CountLbl.TextXAlignment = Enum.TextXAlignment.Left
-CountLbl.Text = "9 GAMES SUPPORTED"
+CountLbl.Text = "10 GAMES SUPPORTED"
 
 local Search = Instance.new("TextBox", Side)
 Search.Position, Search.Size = UDim2.new(0,6,0,24), UDim2.new(1,-12,0,26)
@@ -317,6 +318,7 @@ uis.InputChanged:Connect(function(input)
     end
 end)
 
+-- ── Register games ──────────────────────────────────────────────────────
 AddGame("Universal",        6026568198, "universal",     "UNIVERSAL")
 AddGame("Rivals",           6041285839, "rivals",        "RIVALS")
 AddGame("Fluxo PvP",        6031265976, "fluxopvp",      "FLUXOPVP")
@@ -325,7 +327,8 @@ AddGame("Sell Lemons",      6034509993, "selllemons",    "SELLLEMONS")
 AddGame("Penablox HvH",     6035190846, "penablox",      "PENABLOX")
 AddGame("Europhium HvH",    7743867811, "europhium",     "EUROPHIUM")
 AddGame("Sultanisimus HvH", 6026568198, "sultanisimus",  "SULTANISIMUS")
-AddGame("Ninja Legends",    6041285839, "ninjalegends",  "NINJALEGENDS")
+AddGame("Ninja Legends",    3392479555, "ninjalegends",  "NINJALEGENDS")
+AddGame("BloxStrike",       2241530674, "bloxstrike",    "BLOXSTRIKE")
 
 task.spawn(function()
     Main.Size = UDim2.new(0,560,0,0)
@@ -338,4 +341,4 @@ task.spawn(function()
     Content.Visible = true
 end)
 
-print("[RAINBOW HUB] Loader ready")
+print("[RAINBOW HUB] Loader v1.1 ready — 10 games")
