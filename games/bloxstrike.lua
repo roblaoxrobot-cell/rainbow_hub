@@ -1,6 +1,5 @@
 -- =========================================================================
--- MEMESENSE PORT → FATALITY UI  |  BloxStrike Edition  |  by Axiom
--- Universal (loadstring ready)
+-- RAINBOW HUB — BloxStrike | Fatality UI
 -- =========================================================================
 
 local CoreGui         = game:GetService("CoreGui")
@@ -23,7 +22,7 @@ local function GetFatality()
     local ok, F = pcall(function()
         return loadstring(game:HttpGet("https://raw.githubusercontent.com/4lpaca-pin/Fatality/refs/heads/main/src/source.luau"))()
     end)
-    if not ok or not F then warn("[MS] Fatality load failed") return nil end
+    if not ok or not F then warn("[RH] Fatality load failed") return nil end
     return F
 end
 
@@ -172,7 +171,7 @@ local function lerpColor(a,b,t)
 end
 
 -- =========================================================================
--- [ MIRROR LAYER — эмулируем Obsidian API Toggles.X.Value / Options.X.Value ]
+-- [ MIRROR LAYER ]
 -- =========================================================================
 local Toggles = {}
 local Options = {}
@@ -181,13 +180,9 @@ local function mirrorToggle(name, def)
     local t = { Value = def or false, _callbacks = {} }
     t.SetValue = function(self, v)
         self.Value = v
-        for _, cb in ipairs(self._callbacks) do
-            pcall(cb, v)
-        end
+        for _, cb in ipairs(self._callbacks) do pcall(cb, v) end
     end
-    t.OnChanged = function(self, cb)
-        table.insert(self._callbacks, cb)
-    end
+    t.OnChanged = function(self, cb) table.insert(self._callbacks, cb) end
     Toggles[name] = t
     return t
 end
@@ -196,16 +191,10 @@ local function mirrorOption(name, def)
     local o = { Value = def, _callbacks = {} }
     o.SetValue = function(self, v)
         self.Value = v
-        for _, cb in ipairs(self._callbacks) do
-            pcall(cb, v)
-        end
+        for _, cb in ipairs(self._callbacks) do pcall(cb, v) end
     end
-    o.OnChanged = function(self, cb)
-        table.insert(self._callbacks, cb)
-    end
-    o.GetState = function(self)
-        return self.Value
-    end
+    o.OnChanged = function(self, cb) table.insert(self._callbacks, cb) end
+    o.GetState = function(self) return self.Value end
     o.SetValues = function(self) end
     Options[name] = o
     return o
@@ -217,22 +206,22 @@ end
 local F = GetFatality()
 if not F then return end
 local Notification = F:CreateNotifier()
-if getgenv().MS_Loaded then return end
-getgenv().MS_Loaded = true
+if getgenv().RH_Loaded then return end
+getgenv().RH_Loaded = true
 
-F:Loader({Name = "MEMESENSE", Duration = 3})
-Notification:Notify({Title="MEMESENSE", Content="Welcome, " .. LP.DisplayName, Icon="clipboard"})
+F:Loader({Name = "Rainbow Hub", Duration = 3})
+Notification:Notify({Title="RAINBOW HUB", Content="Welcome, " .. LP.DisplayName, Icon="clipboard"})
 
-local Window = F.new({Name="MEMESENSE", Expire="BloxStrike", Keybind="NONE"})
+local Window = F.new({Name="Rainbow Hub", Expire="BloxStrike", Keybind="NONE"})
 local Config = Window:AddConfig()
-Config:Init("Hub_Memesense", "HubConfigs")
+Config:Init("Hub_BloxStrike", "HubConfigs")
 
 local MenuVisible = true
-getgenv().MS_OpenKey = Enum.KeyCode.RightShift
+getgenv().RH_MenuKey = Enum.KeyCode.Insert
 
 UserInputService.InputBegan:Connect(function(input, gp)
     if gp then return end
-    if keyMatches(input, getgenv().MS_OpenKey) then
+    if keyMatches(input, getgenv().RH_MenuKey) then
         MenuVisible = not MenuVisible
         pcall(function() Window:SetVisible(MenuVisible) end)
     end
@@ -250,14 +239,14 @@ local SkinMenu    = Window:AddMenu({Name="SkinChanger",Icon="shield"})
 local SetMenu     = Window:AddMenu({Name="Settings",   Icon="cog"})
 
 -- =========================================================================
--- [ UI WRAPPERS → Fatality + Mirror ]
+-- [ UI WRAPPERS ]
 -- =========================================================================
 local function AddToggle(section, name, opts)
     opts = opts or {}
     local m = mirrorToggle(name, opts.Default or false)
     section:AddToggle({
         Name = opts.Text or name,
-        Flag = "MS_T_"..name,
+        Flag = "RH_T_"..name,
         Default = opts.Default or false,
         Callback = function(v)
             m.Value = v
@@ -273,7 +262,7 @@ local function AddSlider(section, name, opts)
     local m = mirrorOption(name, opts.Default or 0)
     section:AddSlider({
         Name = opts.Text or name,
-        Flag = "MS_S_"..name,
+        Flag = "RH_S_"..name,
         Default = opts.Default or 0,
         Min = opts.Min or 0,
         Max = opts.Max or 100,
@@ -292,7 +281,7 @@ local function AddDropdown(section, name, opts)
     local m = mirrorOption(name, opts.Default or (opts.Values and opts.Values[1]) or "")
     section:AddDropdown({
         Name = opts.Text or name,
-        Flag = "MS_D_"..name,
+        Flag = "RH_D_"..name,
         Values = opts.Values or {},
         Default = opts.Default,
         Callback = function(v)
@@ -309,7 +298,7 @@ local function AddKeybind(section, name, opts)
     local m = mirrorOption(name, opts.Default or Enum.KeyCode.Unknown)
     section:AddKeybind({
         Name = opts.Text or name,
-        Flag = "MS_K_"..name,
+        Flag = "RH_K_"..name,
         Default = opts.Default or Enum.KeyCode.Unknown,
         Callback = function(v)
             m.Value = v
@@ -325,7 +314,7 @@ local function AddColor(section, name, opts)
     local m = mirrorOption(name, opts.Default or Color3.new(1,1,1))
     section:AddColorPicker({
         Name = opts.Title or opts.Text or name,
-        Flag = "MS_C_"..name,
+        Flag = "RH_C_"..name,
         Default = opts.Default or Color3.new(1,1,1),
         Callback = function(v)
             m.Value = v
@@ -341,7 +330,7 @@ local function AddInput(section, name, opts)
     local m = mirrorOption(name, opts.Default or "")
     section:AddInput({
         Name = opts.Text or name,
-        Flag = "MS_I_"..name,
+        Flag = "RH_I_"..name,
         Default = opts.Default or "",
         Placeholder = opts.Placeholder or "",
         Callback = function(v)
@@ -357,30 +346,21 @@ local function AddButton(section, name, cb)
     section:AddButton({Name=name, Callback = cb})
 end
 
-local function AddLabel(section, txt)
-    -- Fatality может не иметь AddLabel — используем пустой toggle без логики
-    pcall(function() section:AddLabel(txt) end)
-end
-
 -- =========================================================================
--- =========================================================================
---                            SETTINGS TAB
--- =========================================================================
+-- SETTINGS TAB
 -- =========================================================================
 do
     local S = SetMenu:AddSection({Position='left', Name="INTERFACE"})
-    AddKeybind(S, "MenuKeybind", {Text="Menu Keybind", Default=Enum.KeyCode.RightShift,
-        Callback=function(v) if v~=nil then getgenv().MS_OpenKey=v end end})
+    AddKeybind(S, "MenuKeybind", {Text="Menu Keybind", Default=Enum.KeyCode.Insert,
+        Callback=function(v) if v~=nil then getgenv().RH_MenuKey=v end end})
     AddButton(S, "Unload", function()
         pcall(function() Window:SetVisible(false) end)
-        getgenv().MS_Loaded = false
+        getgenv().RH_Loaded = false
     end)
 end
 
 -- =========================================================================
--- =========================================================================
---                                MISC TAB
--- =========================================================================
+-- MISC TAB — MOVEMENT
 -- =========================================================================
 do
     local S = MiscMenu:AddSection({Position='left', Name="MOVEMENT"})
@@ -432,9 +412,7 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- =========================================================================
--- =========================================================================
---                               WORLD TAB
--- =========================================================================
+-- WORLD TAB
 -- =========================================================================
 local WorldBox = WorldMenu:AddSection({Position='left', Name="WORLD"})
 local WeaponVisBox = WorldMenu:AddSection({Position='center', Name="WEAPON VISUAL"})
@@ -447,7 +425,6 @@ local HitMarkerBox = WorldMenu:AddSection({Position='left', Name="HITMARKER"})
 local NightBox = WorldMenu:AddSection({Position='center', Name="NIGHT MODE"})
 local AtmosBox = WorldMenu:AddSection({Position='right', Name="ATMOSPHERE"})
 
--- ── Weapon Visual / Tracers ─────────────────────────────────────────────
 AddToggle(WeaponVisBox, "BulletTracers", {Text="Bullet Tracers", Default=false})
 AddColor(WeaponVisBox, "BulletTracersColor", {Default=Color3.fromRGB(0,170,255), Title="Tracer Color"})
 AddDropdown(WeaponVisBox, "TracerStyle", {Text="Tracer Style", Values={"Block","Cylinder (Obelius)"}, Default="Block"})
@@ -456,7 +433,6 @@ AddSlider(WeaponVisBox, "TracerTime", {Text="Tracer Time", Default=2, Min=0.1, M
 AddToggle(WeaponVisBox, "BulletImpacts", {Text="Bullet Impacts", Default=false})
 AddColor(WeaponVisBox, "BulletImpactsColor", {Default=Color3.fromRGB(255,0,0), Title="Impact Color"})
 
--- ── Custom Hands ────────────────────────────────────────────────────────
 AddToggle(CustomHandsBox, "CustomHandsEnabled", {Text="Enable", Default=false})
 AddSlider(CustomHandsBox, "HandsX", {Text="X", Default=0.2, Min=-2, Max=2, Rounding=3})
 AddSlider(CustomHandsBox, "HandsY", {Text="Y", Default=-0.155, Min=-2, Max=2, Rounding=3})
@@ -482,7 +458,6 @@ RunService.RenderStepped:Connect(function()
     end)
 end)
 
--- ── Weapon Chams ────────────────────────────────────────────────────────
 AddToggle(WeaponChamsBox, "WeaponChamsEnabled", {Text="Enable", Default=false})
 AddColor(WeaponChamsBox, "WeaponChamsColor", {Default=Color3.fromRGB(0,150,255), Title="Chams Color"})
 AddDropdown(WeaponChamsBox, "WeaponChamsMode", {Text="Material", Values={"Glass","ForceField","Metal","Highlight","Neon"}, Default="Glass"})
@@ -518,10 +493,10 @@ RunService.RenderStepped:Connect(function()
                 pcall(function()
                     if mode == "Highlight" then
                         current[part] = true
-                        local h = part:FindFirstChild("MS_WeaponChamsHL")
+                        local h = part:FindFirstChild("RH_WeaponChamsHL")
                         if not h then
                             h = Instance.new("Highlight")
-                            h.Name = "MS_WeaponChamsHL"
+                            h.Name = "RH_WeaponChamsHL"
                             h.Adornee = part
                             h.Parent = part
                             h.FillTransparency = 0
@@ -531,7 +506,7 @@ RunService.RenderStepped:Connect(function()
                         end
                         h.FillColor = color
                     else
-                        local h = part:FindFirstChild("MS_WeaponChamsHL")
+                        local h = part:FindFirstChild("RH_WeaponChamsHL")
                         if h then h:Destroy() end
                         if mode ~= "Neon" then
                             for _, v in ipairs(part:GetChildren()) do
@@ -575,7 +550,6 @@ RunService.RenderStepped:Connect(function()
     end)
 end)
 
--- ── Hit Sound ───────────────────────────────────────────────────────────
 AddToggle(HitSoundBox, "HitSoundEnabled", {Text="Enable Hit Sound", Default=false})
 AddToggle(HitSoundBox, "CustomHitSoundToggle", {Text="Custom Hit Sound", Default=false})
 AddSlider(HitSoundBox, "HitSoundVolume", {Text="Volume", Default=1, Min=0.1, Max=5, Rounding=1})
@@ -625,7 +599,6 @@ local function PlayHitSound()
     end)
 end
 
--- ── Custom Camera ───────────────────────────────────────────────────────
 AddToggle(CustomCameraBox, "CustomFovToggle", {Text="Custom FOV", Default=false})
 AddKeybind(CustomCameraBox, "CustomFovKey", {Text="FOV Key", Default=Enum.KeyCode.One})
 AddSlider(CustomCameraBox, "FovAmount", {Text="FOV Amount", Default=90, Min=70, Max=120, Rounding=0})
@@ -649,7 +622,6 @@ AddSlider(CustomCameraBox, "ThirdPersonDist", {Text="Third Person Distance", Def
         end
     end})
 
--- ── Custom Scope ────────────────────────────────────────────────────────
 AddToggle(CustomScopeBox, "CustomScopeFov", {Text="Custom Scope FOV", Default=false})
 AddSlider(CustomScopeBox, "ScopeFovValue", {Text="Scope FOV", Default=70, Min=10, Max=100, Rounding=1})
 AddToggle(CustomScopeBox, "RemoveScope", {Text="Remove Scope", Default=false})
@@ -659,7 +631,6 @@ AddSlider(CustomScopeBox, "ScopeCrosshairThickness", {Text="Thickness", Default=
 AddSlider(CustomScopeBox, "ScopeCrosshairLengthLR", {Text="Length L&R", Default=150, Min=0, Max=1000, Rounding=0})
 AddSlider(CustomScopeBox, "ScopeCrosshairLengthTB", {Text="Length T&B", Default=100, Min=0, Max=1000, Rounding=0})
 
--- ── HitMarker ───────────────────────────────────────────────────────────
 AddToggle(HitMarkerBox, "HitMarkerEnabled", {Text="Enable HitMarker", Default=false})
 AddColor(HitMarkerBox, "HitMarkerColor", {Default=Color3.fromRGB(255,255,255), Title="HitMarker Color"})
 AddToggle(HitMarkerBox, "HitMarkerRainbow", {Text="Rainbow", Default=false})
@@ -732,7 +703,7 @@ end)
 -- ── Scope Crosshair GUI ─────────────────────────────────────────────────
 task.spawn(function()
     local gui = Instance.new("ScreenGui")
-    gui.Name = "MS_ScopeCrosshair"
+    gui.Name = "RH_ScopeCrosshair"
     gui.ResetOnSpawn = false
     pcall(function() gui.Parent = CoreGui end)
     local container = Instance.new("Frame", gui)
@@ -816,7 +787,6 @@ task.spawn(function()
     end)
 end)
 
--- ── Custom FOV / Third Person loop ──────────────────────────────────────
 RunService.RenderStepped:Connect(function()
     pcall(function()
         if Toggles.CustomFovToggle and Toggles.CustomFovToggle.Value then
@@ -831,7 +801,7 @@ RunService.RenderStepped:Connect(function()
     end)
 end)
 
--- ── Skybox System ───────────────────────────────────────────────────────
+-- ── Skybox ──────────────────────────────────────────────────────────────
 local skyboxtable = {
     ["Night"]={SkyboxBk="rbxassetid://1514717643",SkyboxDn="rbxassetid://1514716936",SkyboxFt="rbxassetid://1514715910",SkyboxLf="rbxassetid://1514714945",SkyboxRt="rbxassetid://1514714011",SkyboxUp="rbxassetid://1514713374"},
     ["Ocean Sunset"]={SkyboxBk="rbxassetid://17525686840",SkyboxDn="rbxassetid://17525678473",SkyboxFt="rbxassetid://17525684686",SkyboxLf="rbxassetid://17525680663",SkyboxRt="rbxassetid://17525682665",SkyboxUp="rbxassetid://17525674545"},
@@ -853,12 +823,12 @@ local function UpdateSkybox(name)
     for _, v in pairs(Lighting:GetChildren()) do
         if v:IsA("Atmosphere") or v:IsA("Clouds") then v:Destroy() end
     end
-    local sky = Lighting:FindFirstChild("MS_Sky")
+    local sky = Lighting:FindFirstChild("RH_Sky")
     if not sky then
         for _, v in pairs(Lighting:GetChildren()) do
             if v:IsA("Sky") then v:Destroy() end
         end
-        sky = Instance.new("Sky"); sky.Name = "MS_Sky"; sky.Parent = Lighting
+        sky = Instance.new("Sky"); sky.Name = "RH_Sky"; sky.Parent = Lighting
     end
     sky.SkyboxBk, sky.SkyboxDn, sky.SkyboxFt = data.SkyboxBk, data.SkyboxDn, data.SkyboxFt
     sky.SkyboxLf, sky.SkyboxRt, sky.SkyboxUp = data.SkyboxLf, data.SkyboxRt, data.SkyboxUp
@@ -880,17 +850,17 @@ local function UpdateWeather(wType)
     if WeatherPart then WeatherPart:Destroy(); WeatherPart=nil end
     if GroundPart then GroundPart:Destroy(); GroundPart=nil end
     for _, v in pairs(Workspace:GetChildren()) do
-        if v.Name == "MS_RainDrop" then v:Destroy() end
+        if v.Name == "RH_RainDrop" then v:Destroy() end
     end
     if wType == "None" then return end
     WeatherPart = Instance.new("Part")
-    WeatherPart.Name="MS_Weather_Sky"; WeatherPart.Size=Vector3.new(100,1,100)
+    WeatherPart.Name="RH_Weather_Sky"; WeatherPart.Size=Vector3.new(100,1,100)
     WeatherPart.Transparency=1; WeatherPart.Anchored=true; WeatherPart.CanCollide=false
     WeatherPart.Parent = Workspace.CurrentCamera
     local se = Instance.new("ParticleEmitter", WeatherPart)
     se.EmissionDirection = Enum.NormalId.Bottom; se.Enabled = true
     GroundPart = Instance.new("Part")
-    GroundPart.Name="MS_Weather_Ground"; GroundPart.Size=Vector3.new(50,1,50)
+    GroundPart.Name="RH_Weather_Ground"; GroundPart.Size=Vector3.new(50,1,50)
     GroundPart.Transparency=1; GroundPart.Anchored=true; GroundPart.CanCollide=false
     GroundPart.Parent = Workspace.CurrentCamera
     local ge = Instance.new("ParticleEmitter", GroundPart); ge.Enabled = false
@@ -923,7 +893,6 @@ RunService.RenderStepped:Connect(function()
     if WeatherPart then WeatherPart.CFrame = cc * CFrame.new(0,30,0) end
 end)
 
--- ── Lighting Controls ───────────────────────────────────────────────────
 local DefaultLighting = {
     Ambient=Lighting.Ambient, OutdoorAmbient=Lighting.OutdoorAmbient,
     Brightness=Lighting.Brightness, ClockTime=Lighting.ClockTime,
@@ -963,14 +932,13 @@ task.spawn(function()
     end
 end)
 
--- ── Night Mode (World Color) ────────────────────────────────────────────
 local WorldSettings = { WorldColorEnabled=false, WorldColor=Color3.new(1,1,1),
     SkyColorEnabled=false, SkyColor=Color3.new(1,1,1) }
 local function isLocalPlayerObject(obj)
     local char = LP.Character
     if char and (obj == char or obj:IsDescendantOf(char)) then return true end
     if obj:IsDescendantOf(Workspace.CurrentCamera) then return true end
-    if obj.Name == "CubeChecker_Physical" or obj.Name:find("MS_") then return true end
+    if obj.Name == "CubeChecker_Physical" or obj.Name:find("RH_") then return true end
     return false
 end
 local function colorObject(obj)
@@ -1006,11 +974,11 @@ RunService.RenderStepped:Connect(function()
         Lighting.Ambient, Lighting.OutdoorAmbient = sc, sc
         Lighting.ColorShift_Bottom, Lighting.ColorShift_Top = sc, sc
         Lighting.FogColor = sc
-        local a = Lighting:FindFirstChild("MS_AtmSky")
-        if not a then a = Instance.new("Atmosphere"); a.Name="MS_AtmSky"; a.Parent=Lighting end
+        local a = Lighting:FindFirstChild("RH_AtmSky")
+        if not a then a = Instance.new("Atmosphere"); a.Name="RH_AtmSky"; a.Parent=Lighting end
         a.Color, a.Decay = sc, sc
     else
-        local a = Lighting:FindFirstChild("MS_AtmSky")
+        local a = Lighting:FindFirstChild("RH_AtmSky")
         if a then a:Destroy() end
     end
 end)
@@ -1023,7 +991,6 @@ AddToggle(NightBox, "SkyColorToggle", {Text="Second Color", Default=false,
 AddColor(NightBox, "SkyColorPicker", {Default=Color3.fromRGB(255,255,255), Title="Second Color",
     Callback=function(c) WorldSettings.SkyColor = c end})
 
--- ── Atmosphere ──────────────────────────────────────────────────────────
 AddToggle(AtmosBox, "Atmosphere", {Text="Enable", Default=false, Callback=function(v)
     if v and Toggles.EnableSkybox and Toggles.EnableSkybox.Value then Toggles.EnableSkybox:SetValue(false) end
 end})
@@ -1063,15 +1030,13 @@ task.spawn(function()
 end)
 
 -- =========================================================================
+-- COMBAT TAB
 -- =========================================================================
---                             COMBAT TAB
--- =========================================================================
--- =========================================================================
-local CombatBox = CombatMenu:AddSection({Position='left', Name="MEMESENSE MODE"})
+local CombatBox = CombatMenu:AddSection({Position='left', Name="CUBE MODE"})
 local BlatantBox = CombatMenu:AddSection({Position='right', Name="BLATANT / RAGE"})
 
-AddToggle(CombatBox, "MemesenseMainToggle", {Text="Memesense Mode", Default=false})
-AddKeybind(CombatBox, "MemesenseKeybind", {Text="Memesense Keybind", Default=Enum.KeyCode.Unknown})
+AddToggle(CombatBox, "CubeModeMainToggle", {Text="Cube Mode", Default=false})
+AddKeybind(CombatBox, "CubeModeKeybind", {Text="Cube Mode Keybind", Default=Enum.KeyCode.Unknown})
 AddToggle(CombatBox, "CubeAimbotEnabled", {Text="Cube Smart Aimbot", Default=false})
 AddToggle(CombatBox, "CubeVisibleCheck", {Text="Visible Check", Default=false})
 AddDropdown(CombatBox, "CubeHitPart", {Text="Hit Selection", Values={"Head","HumanoidRootPart","UpperTorso","LowerTorso"}, Default="Head"})
@@ -1088,7 +1053,6 @@ AddColor(CombatBox, "ShowTargetLineColor", {Default=Color3.fromRGB(0,255,255), T
 AddColor(CombatBox, "ShowTargetCrosshairColor", {Default=Color3.fromRGB(0,255,255), Title="Crosshair Color"})
 AddToggle(CombatBox, "ShowPenetration", {Text="Show Penetration", Default=false})
 
--- ── Silent Aim + Ragebot ────────────────────────────────────────────────
 AddToggle(BlatantBox, "SilentAim", {Text="Enable Silent Aim", Default=false})
 AddToggle(BlatantBox, "SilentWallbang", {Text="Wallbang", Default=false})
 AddToggle(BlatantBox, "SilentUseFovCircle", {Text="Use FOV Circle", Default=false})
@@ -1128,15 +1092,12 @@ AddButton(BlatantBox, "Refresh Priority List", function()
 end)
 
 -- =========================================================================
--- =========================================================================
---                            VISUALS TAB
--- =========================================================================
+-- VISUALS TAB
 -- =========================================================================
 local ESPBox = VisualsMenu:AddSection({Position='left', Name="ESP"})
 local GrenadeBox = VisualsMenu:AddSection({Position='right', Name="GRENADE ESP"})
 local ChamsBox = VisualsMenu:AddSection({Position='right', Name="CHAMS"})
 
--- ── ESP ─────────────────────────────────────────────────────────────────
 AddToggle(ESPBox, "ESPEnabled", {Text="ESP Enabled", Default=false})
 AddToggle(ESPBox, "ESPTeamCheck", {Text="Team Check", Default=true})
 AddDropdown(ESPBox, "ESPBoxType", {Text="Box ESP", Values={"2D Box","3D Box","Corner Box","Disabled"}, Default="2D Box"})
@@ -1168,7 +1129,6 @@ AddColor(ESPBox, "ESPSkeletonColorB", {Default=Color3.fromRGB(0,255,255), Title=
 AddToggle(ESPBox, "ESPCircularTarget", {Text="Circular Target", Default=false})
 AddColor(ESPBox, "ESPCircularTargetColor", {Default=Color3.fromRGB(255,200,0), Title="Circular Target Color"})
 
--- ── Grenade ESP ─────────────────────────────────────────────────────────
 AddToggle(GrenadeBox, "GrenadeTracers", {Text="Grenade Tracers", Default=false})
 AddColor(GrenadeBox, "GrenadeTracerColor", {Default=Color3.fromRGB(255,100,0), Title="Tracer Color"})
 AddToggle(GrenadeBox, "MolotovZoneESP", {Text="Molotov Zone ESP", Default=false})
@@ -1176,7 +1136,6 @@ AddColor(GrenadeBox, "GrenadeZoneColor", {Default=Color3.fromRGB(255,60,0), Titl
 AddToggle(GrenadeBox, "SmokeZoneESP", {Text="Smoke Zone ESP", Default=false})
 AddColor(GrenadeBox, "SmokeZoneColor", {Default=Color3.fromRGB(180,180,180), Title="Smoke Color"})
 
--- ── Chams ───────────────────────────────────────────────────────────────
 AddToggle(ChamsBox, "ChamsEnabled", {Text="Enabled", Default=false})
 AddToggle(ChamsBox, "ChamsTeamCheck", {Text="TeamCheck", Default=true})
 AddDropdown(ChamsBox, "ChamsMaterialVisible", {Text="MaterialVisible", Values={"Neon","Metal","ForceField","SmoothPlastic"}, Default="Neon"})
@@ -1532,7 +1491,7 @@ local function get_cached_screen_pos(cache, part)
     return sp, vis
 end
 
--- ── ESP Render Loop ─────────────────────────────────────────────────────
+-- ESP Render Loop
 RunService.RenderStepped:Connect(function(dt)
     if Toggles.ESPBoxFillRotation and Toggles.ESPBoxFillRotation.Value then
         _rotAngle = (_rotAngle + dt * (Options.ESPBoxRotationSpeed and Options.ESPBoxRotationSpeed.Value or 2)) % (math.pi*2)
@@ -1598,7 +1557,6 @@ RunService.RenderStepped:Connect(function(dt)
             end
         end
 
-        -- BOX
         if data.box and needBox and onscreen and min2 and max2 then
             local x,y = min2.X, min2.Y
             local w = max2.X - min2.X
@@ -1674,7 +1632,6 @@ RunService.RenderStepped:Connect(function(dt)
             hideBox(data.box)
         end
 
-        -- HEALTH BAR
         if data.healthbar then
             local bg = data.healthbar.background
             local segs = data.healthbar.segments
@@ -1709,7 +1666,6 @@ RunService.RenderStepped:Connect(function(dt)
             end
         end
 
-        -- HEALTH TEXT
         if data.healthtext then
             if needHpTxt and onscreen and min2 and max2 and healthAttr then
                 local cur = math.floor(healthAttr + 0.5)
@@ -1722,7 +1678,6 @@ RunService.RenderStepped:Connect(function(dt)
             else data.healthtext.Visible = false end
         end
 
-        -- NAME
         if data.name then
             if needName and onscreen and min2 and max2 then
                 data.name.Text = instance.Name
@@ -1733,7 +1688,6 @@ RunService.RenderStepped:Connect(function(dt)
             else data.name.Visible = false end
         end
 
-        -- DISTANCE
         if data.distance then
             if needDist and onscreen and min2 and max2 then
                 local dist = 999
@@ -1750,7 +1704,6 @@ RunService.RenderStepped:Connect(function(dt)
             else data.distance.Visible = false end
         end
 
-        -- WEAPON
         if data.weapon then
             if needWep and onscreen and min2 and max2 then
                 if not data.player then data.player = Players:GetPlayerFromCharacter(instance) end
@@ -1764,7 +1717,6 @@ RunService.RenderStepped:Connect(function(dt)
             else data.weapon.Visible = false end
         end
 
-        -- TRACER
         if data.tracer then
             if needTracer and onscreen and min2 and max2 then
                 local from
@@ -1795,7 +1747,6 @@ RunService.RenderStepped:Connect(function(dt)
             end
         end
 
-        -- SKELETON
         if data.skeleton then
             if needSkel then
                 local bp = data.skeleton.bone_parts
@@ -1825,7 +1776,6 @@ RunService.RenderStepped:Connect(function(dt)
             end
         end
 
-        -- CIRCULAR TARGET
         if data.circulartarget then
             local ct = data.circulartarget
             local head = instance:FindFirstChild("Head")
@@ -1891,7 +1841,6 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
--- ── Character Scanner ───────────────────────────────────────────────────
 local espCharacters = {}
 local function addEspToCharacter(character)
     if not character or espCharacters[character] then return end
@@ -1958,17 +1907,13 @@ Players.PlayerRemoving:Connect(function(p)
     end
 end)
 
--- =========================================================================
--- [ FOV CIRCLES ]
--- =========================================================================
+-- FOV circles
 local SilentFovCircle = Drawing.new("Circle")
 SilentFovCircle.NumSides=128; SilentFovCircle.Thickness=1; SilentFovCircle.Filled=false; SilentFovCircle.Visible=false
 local AimbotFovCircle = Drawing.new("Circle")
 AimbotFovCircle.NumSides=128; AimbotFovCircle.Thickness=1; AimbotFovCircle.Filled=false; AimbotFovCircle.Visible=false
 
--- =========================================================================
--- [ TARGET SYSTEM ]
--- =========================================================================
+-- Target system
 local SilentTarget, AimbotTarget, RageTarget, CubeSmartTarget
 local lockedTargetInstance
 local rayParams = RaycastParams.new()
@@ -1996,11 +1941,8 @@ local function isVisible(target)
     return true
 end
 
-local function getMemesenseActive()
-    local active = Toggles.MemesenseMainToggle and Toggles.MemesenseMainToggle.Value
-    if Options.MemesenseKeybind and Options.MemesenseKeybind.Value ~= Enum.KeyCode.Unknown then
-        -- keybind logic handled elsewhere
-    end
+local function getCubeModeActive()
+    local active = Toggles.CubeModeMainToggle and Toggles.CubeModeMainToggle.Value
     return active
 end
 
@@ -2012,7 +1954,7 @@ local function FindAllTargets()
     local sDist, sClose = math.huge, nil
     local rDist, rClose = math.huge, nil
     local cDist, cClose = math.huge, nil
-    local memesenseActive = getMemesenseActive()
+    local cubeActive = getCubeModeActive()
 
     local charsFolder = Workspace:FindFirstChild("Characters")
     if not charsFolder then return end
@@ -2032,8 +1974,7 @@ local function FindAllTargets()
         end
     end
 
-    -- Memesense cube target
-    if memesenseActive then
+    if cubeActive then
         local chosen = Options.CubeHitPart.Value or "Head"
         if lockedTargetInstance and lockedTargetInstance.Parent then
             local cm = lockedTargetInstance.Parent
@@ -2066,7 +2007,6 @@ local function FindAllTargets()
         cClose = best
     else lockedTargetInstance = nil end
 
-    -- Rage + Silent
     for _, char in ipairs(allChars) do
         if not isEnemy(char) then continue end
         if Toggles.Ragebot and Toggles.Ragebot.Value then
@@ -2125,9 +2065,9 @@ RunService.RenderStepped:Connect(function()
         AimbotFovCircle.Visible = false
     end)
     if frameCounter % 2 == 0 then FindAllTargets() end
-    local memesenseActive = getMemesenseActive()
+    local cubeActive = getCubeModeActive()
     local targetToPull = nil
-    if memesenseActive and CubeSmartTarget then targetToPull = CubeSmartTarget end
+    if cubeActive and CubeSmartTarget then targetToPull = CubeSmartTarget end
     if targetToPull and targetToPull.Parent then
         pcall(function()
             Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetToPull.Position)
@@ -2135,9 +2075,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- =========================================================================
--- [ SHOW TARGET SYSTEM ]
--- =========================================================================
+-- Show target
 local ShowTargetLines = {}
 for i=1,4 do
     local l = Drawing.new("Line")
@@ -2149,8 +2087,8 @@ ShowTargetConnector.Thickness=1.5; ShowTargetConnector.Transparency=1; ShowTarge
 
 RunService.RenderStepped:Connect(function()
     pcall(function()
-        local memesenseActive = getMemesenseActive()
-        local enabled = memesenseActive and Toggles.ShowTargetPlayer.Value
+        local cubeActive = getCubeModeActive()
+        local enabled = cubeActive and Toggles.ShowTargetPlayer.Value
         local mode = Options.ShowTargetMode.Value
         local closest, minDist = nil, math.huge
         local myTeam = get_player_team(LP)
@@ -2214,9 +2152,7 @@ RunService.RenderStepped:Connect(function()
     end)
 end)
 
--- =========================================================================
--- [ CUBE CHECKER ]
--- =========================================================================
+-- Cube checker
 local CubePart = Instance.new("Part")
 CubePart.Name = "CubeChecker_Physical"
 CubePart.Size = Vector3.new(1.5,1.5,0.01)
@@ -2236,8 +2172,8 @@ impactRayParams.IgnoreWater = true
 
 RunService.RenderStepped:Connect(function()
     pcall(function()
-        local memesenseActive = getMemesenseActive()
-        local enabled = memesenseActive and Toggles.BulletImpactV1Enabled.Value
+        local cubeActive = getCubeModeActive()
+        local enabled = cubeActive and Toggles.BulletImpactV1Enabled.Value
         CubePart.Parent = enabled and Workspace or nil
         if enabled then
             local size = Options.BulletImpactV1Size.Value
@@ -2254,7 +2190,7 @@ RunService.RenderStepped:Connect(function()
             if res then
                 CubePart.Parent = Workspace
                 CubePart.CFrame = CFrame.lookAt(res.Position + res.Normal*0.02, res.Position + res.Normal)
-                if CubeSmartTarget and memesenseActive and Toggles.CubeAimbotEnabled.Value then
+                if CubeSmartTarget and cubeActive and Toggles.CubeAimbotEnabled.Value then
                     CubePart.Color = Color3.fromRGB(0,255,0)
                     selectionBox.Color3 = Color3.fromRGB(0,255,0)
                 else
@@ -2266,9 +2202,7 @@ RunService.RenderStepped:Connect(function()
     end)
 end)
 
--- =========================================================================
--- [ PENETRATION VISUALIZER ]
--- =========================================================================
+-- Penetration visualizer
 task.spawn(function()
     local txt = Drawing.new("Text")
     txt.Visible=false; txt.Center=true; txt.Size=18; txt.Font=2
@@ -2300,9 +2234,7 @@ task.spawn(function()
 end)
 
 -- =========================================================================
--- =========================================================================
---                            WEAPONS TAB
--- =========================================================================
+-- WEAPONS TAB
 -- =========================================================================
 local WeaponModsBox = WeaponsMenu:AddSection({Position='left', Name="WEAPON MODS"})
 local GrenadesBox = WeaponsMenu:AddSection({Position='right', Name="GRENADES"})
@@ -2316,9 +2248,7 @@ AddToggle(WeaponModsBox, "NoRecoil", {Text="No Recoil", Default=false})
 AddToggle(WeaponModsBox, "NoSpread", {Text="No Spread", Default=false})
 AddToggle(WeaponMiscBox, "InstantReload", {Text="Instant Reload", Default=false})
 
--- =========================================================================
--- [ GC HOOKS for weapon system ]
--- =========================================================================
+-- GC hooks
 local originalFireRate = {}
 local firerateobjs = {}
 local SendFunc = nil
@@ -2418,9 +2348,7 @@ task.spawn(function()
     end
 end)
 
--- =========================================================================
--- [ TRACERS ]
--- =========================================================================
+-- Tracers
 local function createTracerBean(startPos, endPos)
     if not (Toggles.BulletTracers and Toggles.BulletTracers.Value) then return end
     if not startPos or not endPos then return end
@@ -2431,7 +2359,7 @@ local function createTracerBean(startPos, endPos)
     end
     local dur = Options.TracerTime.Value
     local part = Instance.new("Part")
-    part.Name = "MS_Tracer"
+    part.Name = "RH_Tracer"
     if style == "Cylinder (Obelius)" then
         part.Shape = Enum.PartType.Cylinder
         part.Size = Vector3.new((startPos-endPos).Magnitude, 0.12, 0.12)
@@ -2464,7 +2392,7 @@ local function createBulletImpact(hitPos)
     if not (Toggles.BulletImpacts and Toggles.BulletImpacts.Value) then return end
     if not hitPos then return end
     local p = Instance.new("Part")
-    p.Name = "MS_Impact"
+    p.Name = "RH_Impact"
     p.Size = Vector3.new(0.6,0.6,0.6)
     p.Position = hitPos
     p.Anchored=true; p.CanCollide=false
@@ -2482,21 +2410,19 @@ local function createBulletImpact(hitPos)
     end)
 end
 
--- =========================================================================
--- [ SHOOT HOOK ]
--- =========================================================================
+-- Shoot hook
 pcall(function()
     if not SendFunc then return end
     local oldshoot = hookfunction(SendFunc, function(...)
         local args = {...}
-        local memesenseActive = getMemesenseActive()
+        local cubeActive = getCubeModeActive()
         if args[1] and type(args[1].Bullets) == "table" then
             for _, bullet in pairs(args[1].Bullets) do
                 if type(bullet.Hits) == "table" then
                     for _, hitData in pairs(bullet.Hits) do
                         local targetPart = nil
                         if Toggles.Ragebot.Value and RageTarget then targetPart = RageTarget
-                        elseif memesenseActive and Toggles.CubeAimbotEnabled.Value and CubeSmartTarget then
+                        elseif cubeActive and Toggles.CubeAimbotEnabled.Value and CubeSmartTarget then
                             local chosen = Options.CubeHitPart.Value
                             targetPart = CubeSmartTarget.Parent and CubeSmartTarget.Parent:FindFirstChild(chosen) or CubeSmartTarget
                         elseif Toggles.SilentAim.Value and SilentTarget then targetPart = SilentTarget end
@@ -2536,9 +2462,7 @@ pcall(function()
     end)
 end)
 
--- =========================================================================
--- [ RAGEBOT LOOP ]
--- =========================================================================
+-- Ragebot loop
 task.spawn(function()
     while true do
         task.wait(Options.RageDelay and Options.RageDelay.Value or 0.02)
@@ -2548,9 +2472,7 @@ task.spawn(function()
     end
 end)
 
--- =========================================================================
--- [ TRIGGERBOT ]
--- =========================================================================
+-- Triggerbot
 task.spawn(function()
     local trp = RaycastParams.new()
     trp.FilterType = Enum.RaycastFilterType.Exclude
@@ -2558,8 +2480,8 @@ task.spawn(function()
     while true do
         task.wait(Options.CubeTriggerbotDelay and Options.CubeTriggerbotDelay.Value or 0.01)
         pcall(function()
-            local memesenseActive = getMemesenseActive()
-            if memesenseActive and Toggles.CubeTriggerbot.Value then
+            local cubeActive = getCubeModeActive()
+            if cubeActive and Toggles.CubeTriggerbot.Value then
                 local should = false
                 trp.FilterDescendantsInstances = {LP.Character}
                 local res = Workspace:Raycast(Camera.CFrame.Position, Camera.CFrame.LookVector*1000, trp)
@@ -2596,9 +2518,7 @@ task.spawn(function()
     end
 end)
 
--- =========================================================================
--- [ FIRERATE LOOP ]
--- =========================================================================
+-- Firerate loop
 task.spawn(function()
     while task.wait(0.05) do
         pcall(function()
@@ -2623,9 +2543,7 @@ task.spawn(function()
     end
 end)
 
--- =========================================================================
--- [ INSTANT RELOAD ]
--- =========================================================================
+-- Instant reload
 task.spawn(function()
     local RELOAD_ANIMS = {Reload=true, ReloadStart=true, ReloadAction=true, ReloadEnd=true}
     local RELOAD_SPEED = 199
@@ -2680,13 +2598,11 @@ task.spawn(function()
     end
 end)
 
--- =========================================================================
--- [ GRENADE ZONE ESP (Circle Edition) ]
--- =========================================================================
+-- Grenade Zone ESP (Circle Edition)
 local ActiveZones = {}
 local function MakeCylinder(col, thick)
     local p = Instance.new("Part")
-    p.Name = "MS_RingSeg"
+    p.Name = "RH_RingSeg"
     p.Anchored=true; p.CanCollide=false; p.CanQuery=false; p.CastShadow=false
     p.Material = Enum.Material.Neon
     p.Color = col
@@ -2731,7 +2647,7 @@ local function ComputeZoneBounds(parent)
     return Vector3.new(cx,minY,cz), math.max(maxR,1.2), true
 end
 
-local SETTINGS = {
+local ZONESETTINGS = {
     Smoke = {RadiusTrim=0, HeightOffset=0.3, Segments=40, Thickness=0.28},
     Molotov = {RadiusTrim=4.5, HeightOffset=0.3, Segments=40, Thickness=0.28},
 }
@@ -2832,10 +2748,10 @@ local function TryHandleZone(obj)
         or nm:find("smokearea") or nm:find("gaszone"))
     if isMolotov and IsToggleOn("MolotovZoneESP") then
         ScannedZones[obj] = true
-        CreateZoneRing(obj, SETTINGS.Molotov, true)
+        CreateZoneRing(obj, ZONESETTINGS.Molotov, true)
     elseif isSmoke and IsToggleOn("SmokeZoneESP") then
         ScannedZones[obj] = true
-        CreateZoneRing(obj, SETTINGS.Smoke, false)
+        CreateZoneRing(obj, ZONESETTINGS.Smoke, false)
     end
 end
 
@@ -2862,9 +2778,7 @@ task.spawn(function()
     end
 end)
 
--- =========================================================================
--- [ GRENADE FLIGHT TRACER ]
--- =========================================================================
+-- Grenade flight tracer
 local TrackedGrenades = {}
 local GRENADE_PATTERNS = {"grenade","flash","molotov","bang","frag","he_","_he","throwable","projectile","nade","incendiary","decoy","c4"}
 local GRENADE_BLACKLIST = {"gun","rifle","pistol","bullet","casing","debris","light","muzzle","launch","effect","arm","leg","torso","head","humanoid","mesh","handle","constraint","weld","motor","zone","voxel"}
@@ -2954,14 +2868,12 @@ task.spawn(function()
     end)
 end)
 
--- =========================================================================
--- [ CHAMS ]
--- =========================================================================
+-- Chams
 task.spawn(function()
     local ESPFolder
     pcall(function()
         ESPFolder = Instance.new("Folder", CoreGui)
-        ESPFolder.Name = "MS_Chams_Container"
+        ESPFolder.Name = "RH_Chams_Container"
     end)
     local Highlights = {}
     local function getMat(s)
@@ -3062,20 +2974,18 @@ task.spawn(function()
     end)
 end)
 
--- =========================================================================
--- [ SKIN CHANGER ]
--- =========================================================================
-local RS = ReplicatedStorage
-local G = {knifeChangerSupported = true}
+-- Skin Changer
+local RSAlias = ReplicatedStorage
+local G_SKIN = {knifeChangerSupported = true}
 pcall(function()
     local ex = (identifyexecutor and identifyexecutor()) or "Unknown"
     if ex:find("RonixExploit", 1, true) or ex:find("Xeno", 1, true) or ex:find("Solara", 1, true) then
-        G.knifeChangerSupported = false
+        G_SKIN.knifeChangerSupported = false
     end
 end)
 local SD = {SkinsRoot=nil, SkinSelections={}, GloveSelections={}, GloveFolders={}}
 pcall(function()
-    SD.SkinsRoot = RS:FindFirstChild("Assets") and RS.Assets:FindFirstChild("Skins")
+    SD.SkinsRoot = RSAlias:FindFirstChild("Assets") and RSAlias.Assets:FindFirstChild("Skins")
 end)
 if SD.SkinsRoot then
     pcall(function()
@@ -3160,16 +3070,16 @@ for w, s in pairs(SD.SkinSelections) do
     end
 end
 
--- Skin apply logic (hooking Skins library)
+-- Skin apply logic
 task.spawn(function()
     pcall(function()
-        if not G.knifeChangerSupported then return end
-        local SM = RS:FindFirstChild("Database") and RS.Database:FindFirstChild("Components")
-            and RS.Database.Components:FindFirstChild("Libraries")
-            and RS.Database.Components.Libraries:FindFirstChild("Skins")
-        local VM = RS:FindFirstChild("Classes") and RS.Classes:FindFirstChild("WeaponComponent")
-            and RS.Classes.WeaponComponent:FindFirstChild("Classes")
-            and RS.Classes.WeaponComponent.Classes:FindFirstChild("Viewmodel")
+        if not G_SKIN.knifeChangerSupported then return end
+        local SM = RSAlias:FindFirstChild("Database") and RSAlias.Database:FindFirstChild("Components")
+            and RSAlias.Database.Components:FindFirstChild("Libraries")
+            and RSAlias.Database.Components.Libraries:FindFirstChild("Skins")
+        local VM = RSAlias:FindFirstChild("Classes") and RSAlias.Classes:FindFirstChild("WeaponComponent")
+            and RSAlias.Classes.WeaponComponent:FindFirstChild("Classes")
+            and RSAlias.Classes.WeaponComponent.Classes:FindFirstChild("Viewmodel")
         if not SM or not VM then return end
         local Sk = require(SM)
         local Vm = require(VM)
@@ -3218,19 +3128,8 @@ task.spawn(function()
     end)
 end)
 
-task.spawn(function()
-    while true do
-        task.wait(0.5)
-        pcall(function()
-            if SkinCfg.SkinChanger.Enabled or SkinCfg.KnifeChanger.Enabled or SkinCfg.GloveChanger.Enabled then
-                -- Skin application happens via library hooks
-            end
-        end)
-    end
-end)
-
 -- =========================================================================
--- [ INIT FINAL ]
+-- FINAL
 -- =========================================================================
-Notification:Notify({Title="MEMESENSE", Content="Loaded. Keybind: RightShift", Icon="clipboard"})
-print("[MEMESENSE PORT] Fatality UI build loaded.")
+Notification:Notify({Title="RAINBOW HUB", Content="BloxStrike loaded. Keybind: Insert", Icon="clipboard"})
+print("[RAINBOW HUB] BloxStrike loaded successfully")
