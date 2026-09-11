@@ -1,4 +1,4 @@
--- RAINBOW HUB | BloxStrike | Fatality UI 1234
+-- RAINBOW HUB | BloxStrike | Fatality UI
 local CoreGui=game:GetService("CoreGui")
 local Players=game:GetService("Players")
 local Workspace=game:GetService("Workspace")
@@ -24,21 +24,48 @@ local function keyMatches(input,key)
 end
 
 -- MATERIAL PENETRATION
-local MaterialLimits={
-    [Enum.Material.Asphalt]=0.25,[Enum.Material.Basalt]=0.25,[Enum.Material.Brick]=0.25,
-    [Enum.Material.Cobblestone]=0.25,[Enum.Material.Concrete]=0.25,[Enum.Material.CrackedLava]=0.25,
-    [Enum.Material.DiamondPlate]=0.25,[Enum.Material.Foil]=0.25,[Enum.Material.Glacier]=0.25,
-    [Enum.Material.Granite]=0.25,[Enum.Material.Grass]=0.25,[Enum.Material.Ground]=0.25,
-    [Enum.Material.Ice]=0.25,[Enum.Material.LeafyGrass]=0.25,[Enum.Material.Limestone]=0.25,
-    [Enum.Material.Marble]=0.25,[Enum.Material.Metal]=0.25,[Enum.Material.Mud]=0.25,
-    [Enum.Material.Pavement]=0.25,[Enum.Material.Rock]=0.25,[Enum.Material.Salt]=0.25,
-    [Enum.Material.Sand]=0.25,[Enum.Material.Sandstone]=0.25,[Enum.Material.Slate]=0.25,
-    [Enum.Material.Snow]=0.25,[Enum.Material.ForceField]=0.25,[Enum.Material.Neon]=0.25,
-    [Enum.Material.CorrodedMetal]=0.25,[Enum.Material.Pebble]=0.25,[Enum.Material.CeramicTiles]=0.25,
-    [Enum.Material.Plaster]=0.25,[Enum.Material.Plastic]=7,[Enum.Material.SmoothPlastic]=7,
-    [Enum.Material.Wood]=7,[Enum.Material.WoodPlanks]=7,[Enum.Material.Cardboard]=7,
-    [Enum.Material.Glass]=100,[Enum.Material.Fabric]=100}
-local MaterialVariantLimits={IndoorWall=0.25,["Sandy Brick"]=0.25}
+local MaterialLimits={}
+MaterialLimits[Enum.Material.Asphalt]=0.25
+MaterialLimits[Enum.Material.Basalt]=0.25
+MaterialLimits[Enum.Material.Brick]=0.25
+MaterialLimits[Enum.Material.Cobblestone]=0.25
+MaterialLimits[Enum.Material.Concrete]=0.25
+MaterialLimits[Enum.Material.CrackedLava]=0.25
+MaterialLimits[Enum.Material.DiamondPlate]=0.25
+MaterialLimits[Enum.Material.Foil]=0.25
+MaterialLimits[Enum.Material.Glacier]=0.25
+MaterialLimits[Enum.Material.Granite]=0.25
+MaterialLimits[Enum.Material.Grass]=0.25
+MaterialLimits[Enum.Material.Ground]=0.25
+MaterialLimits[Enum.Material.Ice]=0.25
+MaterialLimits[Enum.Material.LeafyGrass]=0.25
+MaterialLimits[Enum.Material.Limestone]=0.25
+MaterialLimits[Enum.Material.Marble]=0.25
+MaterialLimits[Enum.Material.Metal]=0.25
+MaterialLimits[Enum.Material.Mud]=0.25
+MaterialLimits[Enum.Material.Pavement]=0.25
+MaterialLimits[Enum.Material.Rock]=0.25
+MaterialLimits[Enum.Material.Salt]=0.25
+MaterialLimits[Enum.Material.Sand]=0.25
+MaterialLimits[Enum.Material.Sandstone]=0.25
+MaterialLimits[Enum.Material.Slate]=0.25
+MaterialLimits[Enum.Material.Snow]=0.25
+MaterialLimits[Enum.Material.ForceField]=0.25
+MaterialLimits[Enum.Material.Neon]=0.25
+MaterialLimits[Enum.Material.CorrodedMetal]=0.25
+MaterialLimits[Enum.Material.Pebble]=0.25
+MaterialLimits[Enum.Material.CeramicTiles]=0.25
+MaterialLimits[Enum.Material.Plaster]=0.25
+MaterialLimits[Enum.Material.Plastic]=7
+MaterialLimits[Enum.Material.SmoothPlastic]=7
+MaterialLimits[Enum.Material.Wood]=7
+MaterialLimits[Enum.Material.WoodPlanks]=7
+MaterialLimits[Enum.Material.Cardboard]=7
+MaterialLimits[Enum.Material.Glass]=100
+MaterialLimits[Enum.Material.Fabric]=100
+local MaterialVariantLimits={}
+MaterialVariantLimits["IndoorWall"]=0.25
+MaterialVariantLimits["Sandy Brick"]=0.25
 
 local function GetPenetrationStats(origin,direction,maxPen,ignoreList,targetRoot)
     local params=RaycastParams.new()
@@ -46,8 +73,10 @@ local function GetPenetrationStats(origin,direction,maxPen,ignoreList,targetRoot
     params.CollisionGroup="Bullet"
     local filter=ignoreList or {LP.Character,Camera}
     params.FilterDescendantsInstances=filter
-    local currentOrigin,currentDir=origin,direction
-    local accMat,accVar={},{}
+    local currentOrigin=origin
+    local currentDir=direction
+    local accMat={}
+    local accVar={}
     local stats={TotalThickness=0,Success=false}
     local backParams=RaycastParams.new()
     backParams.FilterType=Enum.RaycastFilterType.Include
@@ -55,8 +84,14 @@ local function GetPenetrationStats(origin,direction,maxPen,ignoreList,targetRoot
     for _=1,100 do
         if not currentOrigin or not currentDir then break end
         local result=Workspace:Raycast(currentOrigin,currentDir*1000,params)
-        if not result then if not targetRoot then stats.Success=true end break end
-        if targetRoot and result.Instance:IsDescendantOf(targetRoot) then stats.Success=true return stats end
+        if not result then
+            if not targetRoot then stats.Success=true end
+            break
+        end
+        if targetRoot and result.Instance:IsDescendantOf(targetRoot) then
+            stats.Success=true
+            return stats
+        end
         table.insert(filter,result.Instance)
         params.FilterDescendantsInstances=filter
         local enterPos=result.Position
@@ -64,7 +99,9 @@ local function GetPenetrationStats(origin,direction,maxPen,ignoreList,targetRoot
         backParams.FilterDescendantsInstances={result.Instance}
         local backRes=Workspace:Raycast(fakeEnd,enterPos-fakeEnd,backParams)
         local thickness=0.5
-        if not backRes then thickness=5 else
+        if not backRes then
+            thickness=5
+        else
             thickness=(enterPos-backRes.Position).Magnitude
             local variant=backRes.Instance.MaterialVariant
             if variant~="" and MaterialVariantLimits[variant] then
@@ -73,7 +110,8 @@ local function GetPenetrationStats(origin,direction,maxPen,ignoreList,targetRoot
             else
                 local mat=backRes.Material
                 accMat[mat]=(accMat[mat] or 0)+thickness
-                if accMat[mat]>(MaterialLimits[mat] or 0.25)+maxPen then return stats end
+                local lim=MaterialLimits[mat] or 0.25
+                if accMat[mat]>lim+maxPen then return stats end
             end
             currentOrigin=backRes.Position
         end
@@ -82,14 +120,14 @@ local function GetPenetrationStats(origin,direction,maxPen,ignoreList,targetRoot
     return stats
 end
 
--- HELPERS
 local function GetMoveDir()
     local d=Vector3.zero
-    local lv,rv=Camera.CFrame.LookVector,Camera.CFrame.RightVector
-    if UIS:IsKeyDown(Enum.KeyCode.W) then d+=lv end
-    if UIS:IsKeyDown(Enum.KeyCode.S) then d-=lv end
-    if UIS:IsKeyDown(Enum.KeyCode.A) then d-=rv end
-    if UIS:IsKeyDown(Enum.KeyCode.D) then d+=rv end
+    local lv=Camera.CFrame.LookVector
+    local rv=Camera.CFrame.RightVector
+    if UIS:IsKeyDown(Enum.KeyCode.W) then d=d+lv end
+    if UIS:IsKeyDown(Enum.KeyCode.S) then d=d-lv end
+    if UIS:IsKeyDown(Enum.KeyCode.A) then d=d-rv end
+    if UIS:IsKeyDown(Enum.KeyCode.D) then d=d+rv end
     local f=Vector3.new(d.X,0,d.Z)
     if f.Magnitude>0 then return f.Unit end
     return f
@@ -104,18 +142,26 @@ end
 local function hasVest(c)
     if not c then return false end
     local a=c:FindFirstChild("CharacterArmor")
-    return a and a:FindFirstChild("VestDetails")~=nil
+    if not a then return false end
+    if a:FindFirstChild("VestDetails") then return true end
+    return false
 end
 
 local function isAlly(c)
     if not LP.Character then return false end
-    return hasVest(LP.Character)==hasVest(c)
+    local a=hasVest(LP.Character)
+    local b=hasVest(c)
+    if not a then return not b end
+    return b
 end
 
 local function isEnemy(c)
     if not c then return false end
     if not LP.Character then return false end
-    return hasVest(LP.Character)~=hasVest(c)
+    local a=hasVest(LP.Character)
+    local b=hasVest(c)
+    if a then return not b end
+    return b
 end
 
 local function lerpC(a,b,t)
@@ -123,11 +169,15 @@ local function lerpC(a,b,t)
 end
 
 -- MIRROR
-local Toggles,Options={},{}
+local Toggles={}
+local Options={}
 
 local function mirrorToggle(name,def)
     local t={Value=def or false,_cb={}}
-    t.SetValue=function(self,v) self.Value=v for _,cb in ipairs(self._cb) do pcall(cb,v) end end
+    t.SetValue=function(self,v)
+        self.Value=v
+        for _,cb in ipairs(self._cb) do pcall(cb,v) end
+    end
     t.OnChanged=function(self,cb) table.insert(self._cb,cb) end
     Toggles[name]=t
     return t
@@ -135,7 +185,10 @@ end
 
 local function mirrorOption(name,def)
     local o={Value=def,_cb={}}
-    o.SetValue=function(self,v) self.Value=v for _,cb in ipairs(self._cb) do pcall(cb,v) end end
+    o.SetValue=function(self,v)
+        self.Value=v
+        for _,cb in ipairs(self._cb) do pcall(cb,v) end
+    end
     o.OnChanged=function(self,cb) table.insert(self._cb,cb) end
     o.GetState=function(self) return self.Value end
     o.SetValues=function(self) end
@@ -166,7 +219,6 @@ UIS.InputBegan:Connect(function(input,gp)
     end
 end)
 
--- MENUS
 local CombatMenu=Window:AddMenu({Name="Combat",Icon="skull"})
 local VisualsMenu=Window:AddMenu({Name="Visuals",Icon="eye"})
 local WorldMenu=Window:AddMenu({Name="World",Icon="settings"})
@@ -175,74 +227,123 @@ local MiscMenu=Window:AddMenu({Name="Misc",Icon="cog"})
 local SkinMenu=Window:AddMenu({Name="Skins",Icon="shield"})
 local SetMenu=Window:AddMenu({Name="Settings",Icon="cog"})
 
--- UI WRAPPERS
 local function AddToggle(section,name,opts)
     opts=opts or {}
     local m=mirrorToggle(name,opts.Default or false)
-    section:AddToggle({Name=opts.Text or name,Flag="RHT_"..name,Default=opts.Default or false,
-        Callback=function(v) m.Value=v for _,cb in ipairs(m._cb) do pcall(cb,v) end if opts.Callback then pcall(opts.Callback,v) end end})
+    section:AddToggle({
+        Name=opts.Text or name,
+        Flag="RHT_"..name,
+        Default=opts.Default or false,
+        Callback=function(v)
+            m.Value=v
+            for _,cb in ipairs(m._cb) do pcall(cb,v) end
+            if opts.Callback then pcall(opts.Callback,v) end
+        end
+    })
     return m
 end
 
 local function AddSlider(section,name,opts)
     opts=opts or {}
     local m=mirrorOption(name,opts.Default or 0)
-    section:AddSlider({Name=opts.Text or name,Flag="RHS_"..name,Default=opts.Default or 0,
-        Min=opts.Min or 0,Max=opts.Max or 100,Round=opts.Rounding or 0,
-        Callback=function(v) m.Value=v for _,cb in ipairs(m._cb) do pcall(cb,v) end if opts.Callback then pcall(opts.Callback,v) end end})
+    section:AddSlider({
+        Name=opts.Text or name,
+        Flag="RHS_"..name,
+        Default=opts.Default or 0,
+        Min=opts.Min or 0,
+        Max=opts.Max or 100,
+        Round=opts.Rounding or 0,
+        Callback=function(v)
+            m.Value=v
+            for _,cb in ipairs(m._cb) do pcall(cb,v) end
+            if opts.Callback then pcall(opts.Callback,v) end
+        end
+    })
     return m
 end
 
 local function AddDropdown(section,name,opts)
     opts=opts or {}
     local m=mirrorOption(name,opts.Default or (opts.Values and opts.Values[1]) or "")
-    section:AddDropdown({Name=opts.Text or name,Flag="RHD_"..name,Values=opts.Values or {},Default=opts.Default,
-        Callback=function(v) m.Value=v for _,cb in ipairs(m._cb) do pcall(cb,v) end if opts.Callback then pcall(opts.Callback,v) end end})
+    section:AddDropdown({
+        Name=opts.Text or name,
+        Flag="RHD_"..name,
+        Values=opts.Values or {},
+        Default=opts.Default,
+        Callback=function(v)
+            m.Value=v
+            for _,cb in ipairs(m._cb) do pcall(cb,v) end
+            if opts.Callback then pcall(opts.Callback,v) end
+        end
+    })
     return m
 end
 
 local function AddKeybind(section,name,opts)
     opts=opts or {}
     local m=mirrorOption(name,opts.Default or Enum.KeyCode.Unknown)
-    section:AddKeybind({Name=opts.Text or name,Flag="RHK_"..name,Default=opts.Default or Enum.KeyCode.Unknown,
-        Callback=function(v) m.Value=v for _,cb in ipairs(m._cb) do pcall(cb,v) end if opts.Callback then pcall(opts.Callback,v) end end})
+    section:AddKeybind({
+        Name=opts.Text or name,
+        Flag="RHK_"..name,
+        Default=opts.Default or Enum.KeyCode.Unknown,
+        Callback=function(v)
+            m.Value=v
+            for _,cb in ipairs(m._cb) do pcall(cb,v) end
+            if opts.Callback then pcall(opts.Callback,v) end
+        end
+    })
     return m
 end
 
 local function AddColor(section,name,opts)
     opts=opts or {}
     local m=mirrorOption(name,opts.Default or Color3.new(1,1,1))
-    section:AddColorPicker({Name=opts.Title or opts.Text or name,Flag="RHC_"..name,Default=opts.Default or Color3.new(1,1,1),
-        Callback=function(v) m.Value=v for _,cb in ipairs(m._cb) do pcall(cb,v) end if opts.Callback then pcall(opts.Callback,v) end end})
+    section:AddColorPicker({
+        Name=opts.Title or opts.Text or name,
+        Flag="RHC_"..name,
+        Default=opts.Default or Color3.new(1,1,1),
+        Callback=function(v)
+            m.Value=v
+            for _,cb in ipairs(m._cb) do pcall(cb,v) end
+            if opts.Callback then pcall(opts.Callback,v) end
+        end
+    })
     return m
 end
 
 local function AddInput(section,name,opts)
     opts=opts or {}
     local m=mirrorOption(name,opts.Default or "")
-    section:AddInput({Name=opts.Text or name,Flag="RHI_"..name,Default=opts.Default or "",Placeholder=opts.Placeholder or "",
-        Callback=function(v) m.Value=v for _,cb in ipairs(m._cb) do pcall(cb,v) end if opts.Callback then pcall(opts.Callback,v) end end})
+    section:AddInput({
+        Name=opts.Text or name,
+        Flag="RHI_"..name,
+        Default=opts.Default or "",
+        Placeholder=opts.Placeholder or "",
+        Callback=function(v)
+            m.Value=v
+            for _,cb in ipairs(m._cb) do pcall(cb,v) end
+            if opts.Callback then pcall(opts.Callback,v) end
+        end
+    })
     return m
 end
 
-local function AddButton(section,name,cb) section:AddButton({Name=name,Callback=cb}) end
+local function AddButton(section,name,cb)
+    section:AddButton({Name=name,Callback=cb})
+end
 
--- =========================================================================
 -- SETTINGS
--- =========================================================================
 do
     local A=SetMenu:AddSection({Position='left',Name="INTERFACE"})
     AddKeybind(A,"MenuKeybind",{Text="Menu Keybind",Default=Enum.KeyCode.Insert,
         Callback=function(v) if v~=nil then getgenv().RH_MenuKey=v end end})
-    AddButton(A,"Unload",function() pcall(function() Window:SetVisible(false) end) getgenv().RH_Loaded=false end)
-
-    local B=SetMenu:AddSection({Position='right',Name="INFO"})
-    AddButton(B,"Reset Loaded Flag",function() getgenv().RH_Loaded=false end)
+    AddButton(A,"Unload",function()
+        pcall(function() Window:SetVisible(false) end)
+        getgenv().RH_Loaded=false
+    end)
 end
 
--- =========================================================================
 -- MISC
--- =========================================================================
 do
     local A=MiscMenu:AddSection({Position='left',Name="MOVEMENT"})
     AddToggle(A,"AutoBhop",{Text="Auto Bhop",Default=false})
@@ -262,14 +363,20 @@ RunService.Heartbeat:Connect(function()
                 local rp2=RaycastParams.new()
                 rp2.FilterDescendantsInstances={char}
                 rp2.FilterType=Enum.RaycastFilterType.Exclude
-                if Workspace:Raycast(rp.Position,Vector3.new(0,-4,0),rp2) then hum.Jump=true end
+                if Workspace:Raycast(rp.Position,Vector3.new(0,-4,0),rp2) then
+                    hum.Jump=true
+                end
             end
             local dir=GetMoveDir()
             if dir.Magnitude>0 then
-                local spd=math.clamp(Options.BhopSpeed and Options.BhopSpeed.Value or 18,5,30)
+                local spd=18
+                if Options.BhopSpeed then spd=Options.BhopSpeed.Value end
+                spd=math.clamp(spd,5,30)
                 local t=dir*spd
                 local v=rp.AssemblyLinearVelocity
-                rp.AssemblyLinearVelocity=Vector3.new(v.X+(t.X-v.X)*0.2,v.Y,v.Z+(t.Z-v.Z)*0.2)
+                local nx=v.X+(t.X-v.X)*0.2
+                local nz=v.Z+(t.Z-v.Z)*0.2
+                rp.AssemblyLinearVelocity=Vector3.new(nx,v.Y,nz)
             end
         end
     end)
@@ -290,9 +397,7 @@ RunService.Heartbeat:Connect(function()
     end)
 end)
 
--- =========================================================================
--- COMBAT — все разбито на много мелких секций
--- =========================================================================
+-- COMBAT
 do
     local A=CombatMenu:AddSection({Position='left',Name="SILENT AIM"})
     AddToggle(A,"SilentAim",{Text="Enable Silent Aim",Default=false})
@@ -326,7 +431,6 @@ do
     AddDropdown(F1,"CubeHitPart",{Text="Hit Part",Values={"Head","HumanoidRootPart","UpperTorso","LowerTorso"},Default="Head"})
 end
 
--- Combat вторая вкладка (визуал + инфо)
 do
     local A=CombatMenu:AddSection({Position='right',Name="CUBE CHECKER"})
     AddToggle(A,"BulletImpactV1Enabled",{Text="Enable Checker",Default=false})
@@ -345,9 +449,7 @@ do
     AddToggle(C,"ShowPenetration",{Text="Show Penetration",Default=false})
 end
 
--- =========================================================================
--- VISUALS — ESP разбит на много секций
--- =========================================================================
+-- VISUALS - ESP MAIN
 do
     local A=VisualsMenu:AddSection({Position='left',Name="ESP MAIN"})
     AddToggle(A,"ESPEnabled",{Text="ESP Enabled",Default=false})
@@ -371,7 +473,9 @@ do
     AddToggle(C,"ESPHealthText",{Text="Health Text",Default=false})
     AddToggle(C,"ESPSkeleton",{Text="Skeleton",Default=false})
     AddToggle(C,"ESPTracer",{Text="Tracer",Default=false})
+end
 
+do
     local D=VisualsMenu:AddSection({Position='center',Name="COLORS A"})
     AddColor(D,"ESPNameColor",{Default=Color3.new(1,1,1),Title="Name Color"})
     AddColor(D,"ESPDistanceColor",{Default=Color3.new(1,1,1),Title="Distance Color"})
@@ -392,7 +496,6 @@ do
     AddColor(F1,"ESPCircularTargetColor",{Default=Color3.fromRGB(255,200,0),Title="Circ Color"})
 end
 
--- Visuals: Chams + Grenade — вторая страница визуалов через другую секцию
 do
     local A=VisualsMenu:AddSection({Position='left',Name="CHAMS"})
     AddToggle(A,"ChamsEnabled",{Text="Enable",Default=false})
@@ -417,9 +520,7 @@ do
     AddColor(C,"SmokeZoneColor",{Default=Color3.fromRGB(180,180,180),Title="Smoke Color"})
 end
 
--- =========================================================================
 -- WEAPONS
--- =========================================================================
 do
     local A=WeaponsMenu:AddSection({Position='left',Name="WEAPON MODS"})
     AddToggle(A,"Firerate",{Text="Firerate Changer",Default=false})
@@ -433,9 +534,7 @@ do
     AddToggle(B,"Antismoke",{Text="No Smoke",Default=false})
 end
 
--- =========================================================================
 -- WORLD
--- =========================================================================
 do
     local A=WorldMenu:AddSection({Position='left',Name="TRACERS"})
     AddToggle(A,"BulletTracers",{Text="Bullet Tracers",Default=false})
@@ -467,7 +566,6 @@ do
     AddInput(D,"CustomHitSoundID",{Text="Custom ID",Default="",Placeholder="rbxassetid://..."})
 end
 
--- World page 2 — camera/scope/skybox
 do
     local A=WorldMenu:AddSection({Position='left',Name="CAMERA"})
     AddToggle(A,"CustomFovToggle",{Text="Custom FOV",Default=false})
@@ -494,9 +592,7 @@ do
     AddSlider(C,"AtmosphereGlare",{Text="Glare",Default=0,Min=0,Max=10,Rounding=1})
 end
 
--- =========================================================================
 -- SKINS
--- =========================================================================
 do
     local A=SkinMenu:AddSection({Position='left',Name="SKIN CHANGER"})
     AddToggle(A,"EnableSkins",{Text="Enable Weapon Skins",Default=false})
@@ -505,28 +601,26 @@ do
     AddToggle(A,"GloveChangerToggle",{Text="Enable Gloves",Default=false})
 end
 
--- =========================================================================
--- =========================================================================
---                       ESP RENDER SYSTEM
--- =========================================================================
--- =========================================================================
+-- ===== ESP SYSTEM =====
 local espinstances={}
 local R15={{"Head","UpperTorso"},{"UpperTorso","LowerTorso"},{"UpperTorso","LeftUpperArm"},{"LeftUpperArm","LeftLowerArm"},{"LeftLowerArm","LeftHand"},{"UpperTorso","RightUpperArm"},{"RightUpperArm","RightLowerArm"},{"RightLowerArm","RightHand"},{"LowerTorso","LeftUpperLeg"},{"LeftUpperLeg","LeftLowerLeg"},{"LeftLowerLeg","LeftFoot"},{"LowerTorso","RightUpperLeg"},{"RightUpperLeg","RightLowerLeg"},{"RightLowerLeg","RightFoot"}}
 local R6={{"Head","Torso"},{"Torso","Left Arm"},{"Torso","Right Arm"},{"Torso","Left Leg"},{"Torso","Right Leg"}}
 local CORNERS={{0,0,0},{1,0,0},{0,1,0},{1,1,0},{0,0,1},{1,0,1},{0,1,1},{1,1,1}}
 local EDGES={{1,2},{2,4},{4,3},{3,1},{5,6},{6,8},{8,7},{7,5},{1,5},{2,6},{3,7},{4,8}}
 local _rot=0
-local MAXFILL=150
+local MAXFILL=200
 local MAXHP=12
 local GRAD_STEPS=4
-local BD,BW,BH=20,86,155
+local BD=20
+local BW=86
+local BH=155
 local cache=setmetatable({},{__mode="k"})
 
 local function halfext(p)
     local c=cache[p]
     if not c then
         local s=p.Size
-        c={s.X*.5,s.Y*.5,s.Z*.5}
+        c={s.X*0.5,s.Y*0.5,s.Z*0.5}
         cache[p]=c
     end
     return c[1],c[2],c[3]
@@ -554,23 +648,30 @@ local function aabb(parts)
 end
 
 local function projbox(x0,y0,z0,x1,y1,z1)
-    local cx,cy,cz=(x0+x1)*.5,(y0+y1)*.5,(z0+z1)*.5
+    local cx=(x0+x1)*0.5
+    local cy=(y0+y1)*0.5
+    local cz=(z0+z1)*0.5
     local sp,vis=Camera:WorldToViewportPoint(Vector3.new(cx,cy,cz))
     if not vis and sp.Z<=0 then return nil,nil,false end
     local d=sp.Z
     if d<=0 then d=0.1 end
     local sc=BD/d
-    local w,h=BW*sc,BH*sc
-    return Vector2.new(sp.X-w*.5,sp.Y-h*.5),Vector2.new(sp.X+w*.5,sp.Y+h*.5),true
+    local w=BW*sc
+    local h=BH*sc
+    return Vector2.new(sp.X-w*0.5,sp.Y-h*0.5),Vector2.new(sp.X+w*0.5,sp.Y+h*0.5),true
 end
 
 local function projcorners(x0,y0,z0,x1,y1,z1)
-    local sc,on={},false
+    local sc={}
+    local on=false
     for i=1,8 do
         local c=CORNERS[i]
-        local wx=c[1]==0 and x0 or x1
-        local wy=c[2]==0 and y0 or y1
-        local wz=c[3]==0 and z0 or z1
+        local wx=x0
+        if c[1]==1 then wx=x1 end
+        local wy=y0
+        if c[2]==1 then wy=y1 end
+        local wz=z0
+        if c[3]==1 then wz=z1 end
         local pos,vis=Camera:WorldToViewportPoint(Vector3.new(wx,wy,wz))
         sc[i]=Vector2.new(pos.X,pos.Y)
         if vis then on=true end
@@ -581,15 +682,17 @@ end
 local function ensureparts(inst,data)
     if data.pl then return data.pl end
     local list={}
-    local function add(p)
-        if p:IsA("BasePart") then
-            list[#list+1]=p
-            cache[p]=nil
-        end
-    end
     if inst:IsA("Model") then
-        for _,p in next,inst:GetDescendants() do add(p) end
-    elseif inst:IsA("BasePart") then add(inst) end
+        for _,p in next,inst:GetDescendants() do
+            if p:IsA("BasePart") then
+                list[#list+1]=p
+                cache[p]=nil
+            end
+        end
+    elseif inst:IsA("BasePart") then
+        list[1]=inst
+        cache[inst]=nil
+    end
     data.pl=list
     return list
 end
@@ -619,8 +722,10 @@ local function mkfill()
 end
 
 local function filldraw(fl,x,y,w,h,cA,cB,ang)
-    local dx,dy=math.cos(ang),math.sin(ang)
-    local cx,cy=x+w*0.5,y+h*0.5
+    local dx=math.cos(ang)
+    local dy=math.sin(ang)
+    local cx=x+w*0.5
+    local cy=y+h*0.5
     local md=math.max((math.abs(dx)*w+math.abs(dy)*h)*0.5,1)
     local rows=math.clamp(math.floor(h*0.8),15,MAXFILL)
     local rh=h/rows
@@ -635,18 +740,26 @@ local function filldraw(fl,x,y,w,h,cA,cB,ang)
         l.To=Vector2.new(x+w-1,py)
         l.Visible=true
     end
-    for i=rows+1,#fl do fl[i].Visible=false end
+    for i=rows+1,#fl do
+        fl[i].Visible=false
+    end
 end
 
 local function graddraw(box,x,y,w,h,cA,cB,rotOff)
     local g=box.grad
     local idx=0
-    local sides={{x,y,x+w,y},{x+w,y,x+w,y+h},{x+w,y+h,x,y+h},{x,y+h,x,y}}
+    local sides={
+        {x,y,x+w,y},
+        {x+w,y,x+w,y+h},
+        {x+w,y+h,x,y+h},
+        {x,y+h,x,y}
+    }
     for si=1,4 do
         local s=sides[si]
         for st=0,GRAD_STEPS-1 do
             idx=idx+1
-            local tA,tB=st/GRAD_STEPS,(st+1)/GRAD_STEPS
+            local tA=st/GRAD_STEPS
+            local tB=(st+1)/GRAD_STEPS
             local tMid=(((si-1)/4)+(tA/4)+rotOff)%1
             local col=lerpC(cA,cB,tMid)
             local l=g[idx]
@@ -658,7 +771,9 @@ local function graddraw(box,x,y,w,h,cA,cB,rotOff)
             end
         end
     end
-    for i=idx+1,#g do g[i].Visible=false end
+    for i=idx+1,#g do
+        g[i].Visible=false
+    end
 end
 
 local function hidebox(box)
@@ -672,10 +787,25 @@ local function hidebox(box)
 end
 
 local esp={}
+
 function esp.addbox(inst)
-    if not inst or (espinstances[inst] and espinstances[inst].box) then return end
-    local function mkl(th) local l=Drawing.new("Line") l.Thickness=th l.Transparency=1 l.Visible=false return l end
-    local function mks(th,f) local s=Drawing.new("Square") s.Thickness=th s.Filled=f s.Transparency=1 s.Visible=false return s end
+    if not inst then return end
+    if espinstances[inst] and espinstances[inst].box then return end
+    local function mkl(th)
+        local l=Drawing.new("Line")
+        l.Thickness=th
+        l.Transparency=1
+        l.Visible=false
+        return l
+    end
+    local function mks(th,f)
+        local s=Drawing.new("Square")
+        s.Thickness=th
+        s.Filled=f
+        s.Transparency=1
+        s.Visible=false
+        return s
+    end
     local box={}
     box.outline=mks(3,false)
     box.fill=mks(1,false)
@@ -684,7 +814,10 @@ function esp.addbox(inst)
     box.fillgrad=mkfill()
     box.cornfill={}
     box.cornoutline={}
-    for i=1,8 do box.cornfill[i]=mkl(1) box.cornoutline[i]=mkl(3) end
+    for i=1,8 do
+        box.cornfill[i]=mkl(1)
+        box.cornoutline[i]=mkl(3)
+    end
     box.b3d={}
     for i=1,12 do box.b3d[i]=mkl(2) end
     espinstances[inst]=espinstances[inst] or {}
@@ -692,13 +825,20 @@ function esp.addbox(inst)
 end
 
 function esp.addhp(inst)
-    if not inst or (espinstances[inst] and espinstances[inst].hp) then return end
+    if not inst then return end
+    if espinstances[inst] and espinstances[inst].hp then return end
     local bg=Drawing.new("Square")
-    bg.Thickness=1; bg.Filled=true; bg.Color=Color3.new(0,0,0); bg.Transparency=0.5; bg.Visible=false
+    bg.Thickness=1
+    bg.Filled=true
+    bg.Color=Color3.new(0,0,0)
+    bg.Transparency=0.5
+    bg.Visible=false
     local segs={}
     for i=1,MAXHP do
         local l=Drawing.new("Line")
-        l.Thickness=3; l.Transparency=1; l.Visible=false
+        l.Thickness=3
+        l.Transparency=1
+        l.Visible=false
         segs[i]=l
     end
     espinstances[inst]=espinstances[inst] or {}
@@ -706,45 +846,71 @@ function esp.addhp(inst)
 end
 
 function esp.addhptext(inst)
-    if not inst or (espinstances[inst] and espinstances[inst].hptext) then return end
+    if not inst then return end
+    if espinstances[inst] and espinstances[inst].hptext then return end
     local t=Drawing.new("Text")
-    t.Center=false; t.Outline=true; t.Font=1; t.Transparency=1; t.Visible=false
+    t.Center=false
+    t.Outline=true
+    t.Font=1
+    t.Transparency=1
+    t.Visible=false
     espinstances[inst]=espinstances[inst] or {}
     espinstances[inst].hptext=t
 end
 
 function esp.addname(inst)
-    if not inst or (espinstances[inst] and espinstances[inst].name) then return end
+    if not inst then return end
+    if espinstances[inst] and espinstances[inst].name then return end
     local t=Drawing.new("Text")
-    t.Center=true; t.Outline=true; t.Font=1; t.Transparency=1; t.Visible=false
+    t.Center=true
+    t.Outline=true
+    t.Font=1
+    t.Transparency=1
+    t.Visible=false
     espinstances[inst]=espinstances[inst] or {}
     espinstances[inst].name=t
 end
 
 function esp.adddist(inst)
-    if not inst or (espinstances[inst] and espinstances[inst].dist) then return end
+    if not inst then return end
+    if espinstances[inst] and espinstances[inst].dist then return end
     local t=Drawing.new("Text")
-    t.Center=true; t.Outline=true; t.Font=1; t.Transparency=1; t.Visible=false
+    t.Center=true
+    t.Outline=true
+    t.Font=1
+    t.Transparency=1
+    t.Visible=false
     espinstances[inst]=espinstances[inst] or {}
     espinstances[inst].dist=t
 end
 
 function esp.addtracer(inst)
-    if not inst or (espinstances[inst] and espinstances[inst].tracer) then return end
-    local o=Drawing.new("Line"); o.Thickness=3; o.Transparency=1; o.Visible=false
-    local f=Drawing.new("Line"); f.Thickness=1; f.Transparency=1; f.Visible=false
+    if not inst then return end
+    if espinstances[inst] and espinstances[inst].tracer then return end
+    local o=Drawing.new("Line")
+    o.Thickness=3
+    o.Transparency=1
+    o.Visible=false
+    local f=Drawing.new("Line")
+    f.Thickness=1
+    f.Transparency=1
+    f.Visible=false
     espinstances[inst]=espinstances[inst] or {}
     espinstances[inst].tracer={o=o,f=f}
 end
 
 function esp.addskel(inst)
-    if not inst or (espinstances[inst] and espinstances[inst].skel) then return end
+    if not inst then return end
+    if espinstances[inst] and espinstances[inst].skel then return end
     local isR15=inst:FindFirstChild("UpperTorso")~=nil
     local bones=isR15 and R15 or R6
-    local lines,bp={},{}
+    local lines={}
+    local bp={}
     for i=1,#bones do
         local l=Drawing.new("Line")
-        l.Thickness=2; l.Transparency=1; l.Visible=false
+        l.Thickness=2
+        l.Transparency=1
+        l.Visible=false
         lines[i]=l
         bp[i]={inst:FindFirstChild(bones[i][1]),inst:FindFirstChild(bones[i][2])}
     end
@@ -753,27 +919,43 @@ function esp.addskel(inst)
 end
 
 function esp.addweap(inst)
-    if not inst or (espinstances[inst] and espinstances[inst].weap) then return end
+    if not inst then return end
+    if espinstances[inst] and espinstances[inst].weap then return end
     local t=Drawing.new("Text")
-    t.Center=true; t.Outline=true; t.Font=1; t.Transparency=1; t.Visible=false
+    t.Center=true
+    t.Outline=true
+    t.Font=1
+    t.Transparency=1
+    t.Visible=false
     espinstances[inst]=espinstances[inst] or {}
     espinstances[inst].weap=t
 end
 
 function esp.addcirc(inst)
-    if not inst or (espinstances[inst] and espinstances[inst].circ) then return end
+    if not inst then return end
+    if espinstances[inst] and espinstances[inst].circ then return end
     local SEG=32
     local lines={}
     for i=1,SEG do
-        local l=Drawing.new("Line"); l.Thickness=1.5; l.Transparency=1; l.Visible=false
+        local l=Drawing.new("Line")
+        l.Thickness=1.5
+        l.Transparency=1
+        l.Visible=false
         lines[i]=l
     end
     local TR=25
-    local trail,glow={},{}
+    local trail={}
+    local glow={}
     for i=1,TR do
-        local l=Drawing.new("Line"); l.Thickness=2.5; l.Transparency=0.4; l.Visible=false
+        local l=Drawing.new("Line")
+        l.Thickness=2.5
+        l.Transparency=0.4
+        l.Visible=false
         trail[i]=l
-        local g=Drawing.new("Line"); g.Thickness=5; g.Transparency=0.15; g.Visible=false
+        local g=Drawing.new("Line")
+        g.Thickness=5
+        g.Transparency=0.15
+        g.Visible=false
         glow[i]=g
     end
     espinstances[inst]=espinstances[inst] or {}
@@ -789,8 +971,13 @@ local function hideall(data)
     if data.hptext then data.hptext.Visible=false end
     if data.name then data.name.Visible=false end
     if data.dist then data.dist.Visible=false end
-    if data.tracer then data.tracer.o.Visible=false; data.tracer.f.Visible=false end
-    if data.skel then for _,l in ipairs(data.skel.lines) do l.Visible=false end end
+    if data.tracer then
+        data.tracer.o.Visible=false
+        data.tracer.f.Visible=false
+    end
+    if data.skel then
+        for _,l in ipairs(data.skel.lines) do l.Visible=false end
+    end
     if data.weap then data.weap.Visible=false end
     if data.circ then
         for _,l in ipairs(data.circ.lines) do l.Visible=false end
@@ -817,8 +1004,13 @@ local function cleaninst(inst,data)
         if data.hptext then data.hptext:Remove() end
         if data.name then data.name:Remove() end
         if data.dist then data.dist:Remove() end
-        if data.tracer then data.tracer.o:Remove(); data.tracer.f:Remove() end
-        if data.skel then for _,l in next,data.skel.lines do l:Remove() end end
+        if data.tracer then
+            data.tracer.o:Remove()
+            data.tracer.f:Remove()
+        end
+        if data.skel then
+            for _,l in next,data.skel.lines do l:Remove() end
+        end
         if data.weap then data.weap:Remove() end
         if data.circ then
             for _,l in ipairs(data.circ.lines) do l:Remove() end
@@ -828,7 +1020,8 @@ local function cleaninst(inst,data)
     end)
 end
 
-local wcache,wname={},{}
+local wcache={}
+local wname={}
 local function GetWeaponName(plr)
     if not plr then return "None" end
     local a=plr:GetAttribute("CurrentEquipped")
@@ -836,8 +1029,14 @@ local function GetWeaponName(plr)
         wcache[plr]=a
         if a then
             local ok,dec=pcall(function() return HS:JSONDecode(a) end)
-            wname[plr]=(ok and dec and dec.Name) or "None"
-        else wname[plr]="None" end
+            if ok and dec then
+                wname[plr]=dec.Name or "None"
+            else
+                wname[plr]="None"
+            end
+        else
+            wname[plr]="None"
+        end
     end
     return wname[plr] or "None"
 end
@@ -851,6 +1050,7 @@ local function scrpos(cache,part)
     return sp,vis
 end
 
+-- ↑↑↑ ЧАСТЬ 1 ЗАКОНЧИЛАСЬ ↑↑↑
 RunService.RenderStepped:Connect(function(dt)
     if Toggles.ESPBoxFillRotation and Toggles.ESPBoxFillRotation.Value then
         _rot=(_rot+dt*(Options.ESPBoxRotationSpeed and Options.ESPBoxRotationSpeed.Value or 2))%(math.pi*2)
@@ -866,13 +1066,13 @@ RunService.RenderStepped:Connect(function(dt)
             espinstances[inst]=nil
             continue
         end
-        if inst==LP.Character then hideall(data); continue end
-        if teamChk and isAlly(inst) then hideall(data); continue end
+        if inst==LP.Character then hideall(data) continue end
+        if teamChk and isAlly(inst) then hideall(data) continue end
 
         local hAttr=inst:GetAttribute("Health")
         local maxAttr=inst:GetAttribute("MaxHealth") or 100
         local deadAttr=inst:GetAttribute("Dead")
-        if deadAttr==true or (hAttr and hAttr<=0) then hideall(data); continue end
+        if deadAttr==true or (hAttr and hAttr<=0) then hideall(data) continue end
 
         local nBox=Toggles.ESPEnabled.Value and Options.ESPBoxType.Value~="Disabled" and data.box~=nil
         local nHp=Toggles.ESPEnabled.Value and Toggles.ESPHealth.Value and data.hp~=nil
@@ -892,8 +1092,13 @@ RunService.RenderStepped:Connect(function(dt)
         if data.hptext and not nHpTxt then data.hptext.Visible=false end
         if data.name and not nName then data.name.Visible=false end
         if data.dist and not nDist then data.dist.Visible=false end
-        if data.tracer and not nTrc then data.tracer.o.Visible=false; data.tracer.f.Visible=false end
-        if data.skel and not nSkel then for _,l in ipairs(data.skel.lines) do l.Visible=false end end
+        if data.tracer and not nTrc then
+            data.tracer.o.Visible=false
+            data.tracer.f.Visible=false
+        end
+        if data.skel and not nSkel then
+            for _,l in ipairs(data.skel.lines) do l.Visible=false end
+        end
         if data.weap and not nWep then data.weap.Visible=false end
         if data.circ and not nCirc then
             for _,l in ipairs(data.circ.lines) do l.Visible=false end
@@ -914,10 +1119,11 @@ RunService.RenderStepped:Connect(function(dt)
             end
         end
 
-        -- BOX
         if data.box and nBox and onscr and min2 and max2 then
-            local x,y=min2.X,min2.Y
-            local w,h=max2.X-min2.X,max2.Y-min2.Y
+            local x=min2.X
+            local y=min2.Y
+            local w=max2.X-min2.X
+            local h=max2.Y-min2.Y
             local cA=Options.ESPBoxColorA.Value
             local cB=Options.ESPBoxColorB.Value
             local fA=Options.ESPFillColorA.Value
@@ -926,7 +1132,9 @@ RunService.RenderStepped:Connect(function(dt)
             if bt=="2D Box" then
                 if Toggles.ESPBoxFillGradient.Value then
                     filldraw(data.box.fillgrad,x,y,w,h,fA,fB,_rot)
-                else for _,l in ipairs(data.box.fillgrad) do l.Visible=false end end
+                else
+                    for _,l in ipairs(data.box.fillgrad) do l.Visible=false end
+                end
                 graddraw(data.box,x,y,w,h,cA,cB,rotOff)
                 data.box.outline.Visible=false
                 data.box.fill.Visible=false
@@ -939,8 +1147,10 @@ RunService.RenderStepped:Connect(function(dt)
                 data.box.fill.Visible=false
                 if Toggles.ESPBoxFillGradient.Value then
                     filldraw(data.box.fillgrad,x,y,w,h,fA,fB,_rot)
-                else for _,l in ipairs(data.box.fillgrad) do l.Visible=false end end
-                local len=math.min(w,h)*.25
+                else
+                    for _,l in ipairs(data.box.fillgrad) do l.Visible=false end
+                end
+                local len=math.min(w,h)*0.25
                 local corners={
                     {Vector2.new(x,y),Vector2.new(x+len,y)},
                     {Vector2.new(x,y),Vector2.new(x,y+len)},
@@ -949,7 +1159,8 @@ RunService.RenderStepped:Connect(function(dt)
                     {Vector2.new(x,y+h),Vector2.new(x+len,y+h)},
                     {Vector2.new(x,y+h-len),Vector2.new(x,y+h)},
                     {Vector2.new(x+w-len,y+h),Vector2.new(x+w,y+h)},
-                    {Vector2.new(x+w,y+h-len),Vector2.new(x+w,y+h)}}
+                    {Vector2.new(x+w,y+h-len),Vector2.new(x+w,y+h)}
+                }
                 for i=1,8 do
                     local col=lerpC(cA,cB,(i-1)/8)
                     data.box.cornoutline[i].From=corners[i][1]
@@ -977,11 +1188,14 @@ RunService.RenderStepped:Connect(function(dt)
                         data.box.b3d[i].Color=lerpC(cA,cB,(i-1)/12)
                         data.box.b3d[i].Visible=on3d
                     end
-                else for _,l in ipairs(data.box.b3d) do l.Visible=false end end
+                else
+                    for _,l in ipairs(data.box.b3d) do l.Visible=false end
+                end
             end
-        elseif data.box then hidebox(data.box) end
+        elseif data.box then
+            hidebox(data.box)
+        end
 
-        -- HP BAR
         if data.hp then
             local bg=data.hp.bg
             local segs=data.hp.segs
@@ -1007,7 +1221,9 @@ RunService.RenderStepped:Connect(function(dt)
                         seg.To=Vector2.new(x+w*0.5,startY+i*segH)
                         seg.Thickness=w
                         seg.Visible=true
-                    else seg.Visible=false end
+                    else
+                        seg.Visible=false
+                    end
                 end
             else
                 bg.Visible=false
@@ -1015,7 +1231,6 @@ RunService.RenderStepped:Connect(function(dt)
             end
         end
 
-        -- HP TEXT
         if data.hptext then
             if nHpTxt and onscr and min2 and max2 and hAttr then
                 data.hptext.Text=tostring(math.floor(hAttr+0.5))
@@ -1023,36 +1238,41 @@ RunService.RenderStepped:Connect(function(dt)
                 data.hptext.Color=Options.ESPHealthTextColor.Value
                 data.hptext.Position=Vector2.new(max2.X+4,min2.Y+(max2.Y-min2.Y)*(1-(hAttr/maxAttr))-4)
                 data.hptext.Visible=true
-            else data.hptext.Visible=false end
+            else
+                data.hptext.Visible=false
+            end
         end
 
-        -- NAME
         if data.name then
             if nName and onscr and min2 and max2 then
                 data.name.Text=inst.Name
                 data.name.Size=13
                 data.name.Color=Options.ESPNameColor.Value
-                data.name.Position=Vector2.new((min2.X+max2.X)*.5,min2.Y-15)
+                data.name.Position=Vector2.new((min2.X+max2.X)*0.5,min2.Y-15)
                 data.name.Visible=true
-            else data.name.Visible=false end
+            else
+                data.name.Visible=false
+            end
         end
 
-        -- DIST
         if data.dist then
             if nDist and onscr and min2 and max2 then
                 local d=999
                 if inst:IsA("Model") and inst.PrimaryPart then
                     d=(camPos-inst.PrimaryPart.Position).Magnitude
-                elseif inst:IsA("BasePart") then d=(camPos-inst.Position).Magnitude end
+                elseif inst:IsA("BasePart") then
+                    d=(camPos-inst.Position).Magnitude
+                end
                 data.dist.Text=tostring(math.floor(d)).."m"
                 data.dist.Size=13
                 data.dist.Color=Options.ESPDistanceColor.Value
-                data.dist.Position=Vector2.new((min2.X+max2.X)*.5,max2.Y+2)
+                data.dist.Position=Vector2.new((min2.X+max2.X)*0.5,max2.Y+2)
                 data.dist.Visible=true
-            else data.dist.Visible=false end
+            else
+                data.dist.Visible=false
+            end
         end
 
-        -- WEAPON
         if data.weap then
             if nWep and onscr and min2 and max2 then
                 if not data.plr then data.plr=Players:GetPlayerFromCharacter(inst) end
@@ -1060,12 +1280,13 @@ RunService.RenderStepped:Connect(function(dt)
                 data.weap.Text="["..wn.."]"
                 data.weap.Size=13
                 data.weap.Color=Options.ESPWeaponColor.Value
-                data.weap.Position=Vector2.new((min2.X+max2.X)*.5,max2.Y+15)
+                data.weap.Position=Vector2.new((min2.X+max2.X)*0.5,max2.Y+15)
                 data.weap.Visible=true
-            else data.weap.Visible=false end
+            else
+                data.weap.Visible=false
+            end
         end
 
-        -- TRACER
         if data.tracer then
             if nTrc and onscr and min2 and max2 then
                 local from
@@ -1073,9 +1294,13 @@ RunService.RenderStepped:Connect(function(dt)
                 if o=="Mouse" then
                     local ml=UIS:GetMouseLocation()
                     from=Vector2.new(ml.X,ml.Y)
-                elseif o=="Top" then from=Vector2.new(vp.X/2,0)
-                elseif o=="Center" then from=Vector2.new(vp.X/2,vp.Y/2)
-                else from=Vector2.new(vp.X/2,vp.Y) end
+                elseif o=="Top" then
+                    from=Vector2.new(vp.X/2,0)
+                elseif o=="Center" then
+                    from=Vector2.new(vp.X/2,vp.Y/2)
+                else
+                    from=Vector2.new(vp.X/2,vp.Y)
+                end
                 local to=(min2+max2)/2
                 local d=0
                 if inst:IsA("Model") and inst.PrimaryPart then
@@ -1096,7 +1321,6 @@ RunService.RenderStepped:Connect(function(dt)
             end
         end
 
-        -- SKELETON
         if data.skel then
             if nSkel then
                 local bp=data.skel.bp
@@ -1105,7 +1329,8 @@ RunService.RenderStepped:Connect(function(dt)
                 for k in next,sc do sc[k]=nil end
                 local any=false
                 for i=1,#bp do
-                    local pA,pB=bp[i][1],bp[i][2]
+                    local pA=bp[i][1]
+                    local pB=bp[i][2]
                     local line=lines[i]
                     if pA and pB and pA.Parent and pB.Parent then
                         local posA,vA=scrpos(sc,pA)
@@ -1117,26 +1342,40 @@ RunService.RenderStepped:Connect(function(dt)
                             line.Thickness=2
                             line.Visible=true
                             any=true
-                        else line.Visible=false end
-                    else line.Visible=false end
+                        else
+                            line.Visible=false
+                        end
+                    else
+                        line.Visible=false
+                    end
                 end
-                if not any then for _,l in ipairs(lines) do l.Visible=false end end
-            else for _,l in ipairs(data.skel.lines) do l.Visible=false end end
+                if not any then
+                    for _,l in ipairs(lines) do l.Visible=false end
+                end
+            else
+                for _,l in ipairs(data.skel.lines) do l.Visible=false end
+            end
         end
 
-        -- CIRC
         if data.circ then
             local ct=data.circ
             local head=inst:FindFirstChild("Head")
-            local root=inst:IsA("Model") and inst.PrimaryPart or inst:FindFirstChild("HumanoidRootPart") or head
+            local root=inst:FindFirstChild("HumanoidRootPart") or head
+            if inst:IsA("Model") and inst.PrimaryPart then root=inst.PrimaryPart end
             if nCirc and head and root then
                 local sp=2.0
                 if ct.up then
                     ct.alpha=ct.alpha+dt*sp
-                    if ct.alpha>=1 then ct.alpha=1; ct.up=false end
+                    if ct.alpha>=1 then
+                        ct.alpha=1
+                        ct.up=false
+                    end
                 else
                     ct.alpha=ct.alpha-dt*sp
-                    if ct.alpha<=0 then ct.alpha=0; ct.up=true end
+                    if ct.alpha<=0 then
+                        ct.alpha=0
+                        ct.up=true
+                    end
                 end
                 local footPos=root.Position-Vector3.new(0,(root.Size.Y*0.8)+1.2,0)
                 local headPos=head.Position+Vector3.new(0,0.3,0)
@@ -1146,22 +1385,31 @@ RunService.RenderStepped:Connect(function(dt)
                 for i=1,#ct.trail do
                     local tl=ct.trail[i]
                     local gl=ct.glow[i]
-                    local p1,p2=ct.hist[i],ct.hist[i+1]
+                    local p1=ct.hist[i]
+                    local p2=ct.hist[i+1]
                     if p1 and p2 then
                         local s1,v1=Camera:WorldToViewportPoint(p1)
                         local s2,v2=Camera:WorldToViewportPoint(p2)
                         if v1 or v2 then
                             local fade=math.clamp(1-(i/#ct.trail),0.05,1)
-                            gl.From=Vector2.new(s1.X,s1.Y); gl.To=Vector2.new(s2.X,s2.Y)
+                            gl.From=Vector2.new(s1.X,s1.Y)
+                            gl.To=Vector2.new(s2.X,s2.Y)
                             gl.Color=Options.ESPCircularTargetColor.Value
                             gl.Transparency=fade*0.35
                             gl.Visible=true
-                            tl.From=Vector2.new(s1.X,s1.Y); tl.To=Vector2.new(s2.X,s2.Y)
+                            tl.From=Vector2.new(s1.X,s1.Y)
+                            tl.To=Vector2.new(s2.X,s2.Y)
                             tl.Color=Options.ESPCircularTargetColor.Value
                             tl.Transparency=fade*0.85
                             tl.Visible=true
-                        else tl.Visible=false; gl.Visible=false end
-                    else tl.Visible=false; gl.Visible=false end
+                        else
+                            tl.Visible=false
+                            gl.Visible=false
+                        end
+                    else
+                        tl.Visible=false
+                        gl.Visible=false
+                    end
                 end
                 local R=2.2
                 local SEG=ct.seg
@@ -1179,7 +1427,9 @@ RunService.RenderStepped:Connect(function(dt)
                         line.To=Vector2.new(sB.X,sB.Y)
                         line.Color=col
                         line.Visible=true
-                    else line.Visible=false end
+                    else
+                        line.Visible=false
+                    end
                 end
             else
                 for _,l in ipairs(ct.lines) do l.Visible=false end
@@ -1190,7 +1440,7 @@ RunService.RenderStepped:Connect(function(dt)
     end
 end)
 
--- Character scanner
+-- CHARACTER SCANNER
 local espChars={}
 local function addChar(c)
     if not c or espChars[c] then return end
@@ -1247,13 +1497,11 @@ if charsFolder then
     end)
 end
 
--- =========================================================================
--- =========================================================================
---                     TARGET SYSTEM + AIMBOT
--- =========================================================================
--- =========================================================================
-local SilentTarget,RageTarget,CubeTarget
-local lockedInst
+-- TARGET SYSTEM
+local SilentTarget=nil
+local RageTarget=nil
+local CubeTarget=nil
+local lockedInst=nil
 local rayP=RaycastParams.new()
 rayP.FilterType=Enum.RaycastFilterType.Exclude
 rayP.IgnoreWater=true
@@ -1280,7 +1528,8 @@ local function isVisible(target)
 end
 
 local function cubeActive()
-    return Toggles.CubeModeMainToggle and Toggles.CubeModeMainToggle.Value
+    if Toggles.CubeModeMainToggle and Toggles.CubeModeMainToggle.Value then return true end
+    return false
 end
 
 local function FindTargets()
@@ -1288,9 +1537,12 @@ local function FindTargets()
     if not lchar then return end
     local myT=getTeam(LP)
     local center=Camera.ViewportSize/2
-    local sDist,sClose=math.huge,nil
-    local rDist,rClose=math.huge,nil
-    local cDist,cClose=math.huge,nil
+    local sDist=math.huge
+    local sClose=nil
+    local rDist=math.huge
+    local rClose=nil
+    local cDist=math.huge
+    local cClose=nil
     local cActive=cubeActive()
 
     local cf=Workspace:FindFirstChild("Characters")
@@ -1317,9 +1569,14 @@ local function FindTargets()
             local cm=lockedInst.Parent
             local dead=cm:GetAttribute("Dead") or cm:GetAttribute("Invincible")
             local hp=cm:GetAttribute("Health")
-            if dead or (hp and hp<=0) then lockedInst=nil
-            elseif Toggles.CubeVisibleCheck.Value and not isVisible(lockedInst) then lockedInst=nil end
-        else lockedInst=nil end
+            if dead or (hp and hp<=0) then
+                lockedInst=nil
+            elseif Toggles.CubeVisibleCheck.Value and not isVisible(lockedInst) then
+                lockedInst=nil
+            end
+        else
+            lockedInst=nil
+        end
 
         local best=lockedInst
         local bestD=math.huge
@@ -1335,12 +1592,17 @@ local function FindTargets()
             if Toggles.CubeVisibleCheck.Value then okVis=isVisible(tp) end
             if okVis then
                 local d=(Camera.CFrame.Position-tp.Position).Magnitude
-                if d<bestD then bestD=d; best=tp end
+                if d<bestD then
+                    bestD=d
+                    best=tp
+                end
             end
         end
         lockedInst=best
         cClose=best
-    else lockedInst=nil end
+    else
+        lockedInst=nil
+    end
 
     for _,ch in ipairs(all) do
         if not isEnemy(ch) then continue end
@@ -1353,7 +1615,10 @@ local function FindTargets()
                 if alive and Toggles.RagebotWallCheck.Value and not isVisible(rp) then alive=false end
                 if alive then
                     local d=(Camera.CFrame.Position-rp.Position).Magnitude
-                    if d<rDist then rDist=d; rClose=rp end
+                    if d<rDist then
+                        rDist=d
+                        rClose=rp
+                    end
                 end
             end
         end
@@ -1364,10 +1629,17 @@ local function FindTargets()
                 local spos,son=Camera:WorldToViewportPoint(sp.Position)
                 if son then
                     local sd=(Vector2.new(spos.X,spos.Y)-center).Magnitude
-                    local maxR=(Toggles.SilentUseFovCircle.Value and Options.SilentFovCircleRadius.Value) or 999999
+                    local maxR=999999
+                    if Toggles.SilentUseFovCircle.Value then
+                        maxR=Options.SilentFovCircleRadius.Value
+                    end
                     if sd<=maxR then
-                        local ok=Toggles.SilentWallbang.Value or isVisible(sp)
-                        if ok and sd<sDist then sDist=sd; sClose=sp end
+                        local ok=false
+                        if Toggles.SilentWallbang.Value then ok=true else ok=isVisible(sp) end
+                        if ok and sd<sDist then
+                            sDist=sd
+                            sClose=sp
+                        end
                     end
                 end
             end
@@ -1378,7 +1650,6 @@ local function FindTargets()
     CubeTarget=cClose
 end
 
--- Silent FOV circle
 local SFovC=Drawing.new("Circle")
 SFovC.NumSides=128
 SFovC.Thickness=1.5
@@ -1404,22 +1675,27 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Show target
+-- SHOW TARGET
 local STLines={}
 for i=1,4 do
     local l=Drawing.new("Line")
-    l.Thickness=2; l.Transparency=1; l.Visible=false
+    l.Thickness=2
+    l.Transparency=1
+    l.Visible=false
     STLines[i]=l
 end
 local STConn=Drawing.new("Line")
-STConn.Thickness=1.5; STConn.Transparency=1; STConn.Visible=false
+STConn.Thickness=1.5
+STConn.Transparency=1
+STConn.Visible=false
 
 RunService.RenderStepped:Connect(function()
     pcall(function()
         local cA=cubeActive()
         local en=cA and Toggles.ShowTargetPlayer.Value
         local md=Options.ShowTargetMode.Value
-        local closest,minD=nil,math.huge
+        local closest=nil
+        local minD=math.huge
         local myT=getTeam(LP)
         local chosen=Options.CubeHitPart.Value
         if en then
@@ -1435,7 +1711,10 @@ RunService.RenderStepped:Connect(function()
                                 local pp=ch:FindFirstChild(chosen) or ch:FindFirstChild("Head") or ch:FindFirstChild("HumanoidRootPart")
                                 if pp then
                                     local d=(Camera.CFrame.Position-pp.Position).Magnitude
-                                    if d<minD then minD=d; closest=pp end
+                                    if d<minD then
+                                        minD=d
+                                        closest=pp
+                                    end
                                 end
                             end
                         end
@@ -1443,7 +1722,8 @@ RunService.RenderStepped:Connect(function()
                 end
             end
         end
-        local lVis,cVis=false,false
+        local lVis=false
+        local cVis=false
         if en and closest and closest.Parent then
             local sp,on=Camera:WorldToViewportPoint(closest.Position)
             local center=Vector2.new(sp.X,sp.Y)
@@ -1460,7 +1740,8 @@ RunService.RenderStepped:Connect(function()
                     l.Color=col
                     l.Thickness=2
                     local a=ang+bA[j]
-                    local ca,sa=math.cos(a),math.sin(a)
+                    local ca=math.cos(a)
+                    local sa=math.sin(a)
                     l.From=center+Vector2.new(ca*gap,sa*gap)
                     l.To=center+Vector2.new(ca*(gap+size),sa*(gap+size))
                     l.Visible=true
@@ -1476,12 +1757,14 @@ RunService.RenderStepped:Connect(function()
                 lVis=true
             end
         end
-        if not cVis then for j=1,4 do STLines[j].Visible=false end end
+        if not cVis then
+            for j=1,4 do STLines[j].Visible=false end
+        end
         if not lVis then STConn.Visible=false end
     end)
 end)
 
--- Cube checker
+-- CUBE CHECKER
 local CubePart=Instance.new("Part")
 CubePart.Name="RH_CubeChecker"
 CubePart.Size=Vector3.new(1.5,1.5,0.01)
@@ -1511,7 +1794,9 @@ RunService.RenderStepped:Connect(function()
             local mx=Options.BulletImpactV1Dist.Value
             CubePart.Size=Vector3.new(sz,sz,0.01)
             local col=Options.BulletImpactV1Color.Value
-            if Toggles.BulletImpactV1Rainbow.Value then col=Color3.fromHSV((tick()%5)/5,1,1) end
+            if Toggles.BulletImpactV1Rainbow.Value then
+                col=Color3.fromHSV((tick()%5)/5,1,1)
+            end
             IRP.FilterDescendantsInstances={LP.Character,CubePart}
             local res=Workspace:Raycast(Camera.CFrame.Position,Camera.CFrame.LookVector*mx,IRP)
             if res then
@@ -1524,16 +1809,22 @@ RunService.RenderStepped:Connect(function()
                     CubePart.Color=col
                     SB.Color3=col
                 end
-            else CubePart.Parent=nil end
+            else
+                CubePart.Parent=nil
+            end
         end
     end)
 end)
 
--- Penetration
+-- PENETRATION
 task.spawn(function()
     local txt=Drawing.new("Text")
-    txt.Visible=false; txt.Center=true; txt.Size=18; txt.Font=2
-    txt.Color=Color3.fromRGB(0,255,0); txt.Outline=true
+    txt.Visible=false
+    txt.Center=true
+    txt.Size=18
+    txt.Font=2
+    txt.Color=Color3.fromRGB(0,255,0)
+    txt.Outline=true
     local pp=RaycastParams.new()
     pp.FilterType=Enum.RaycastFilterType.Exclude
     pp.CollisionGroup="Bullet"
@@ -1554,14 +1845,16 @@ task.spawn(function()
                     txt.Text="WALLBANG: NO"
                     txt.Color=Color3.fromRGB(255,0,0)
                 end
-            else txt.Visible=false end
-        else txt.Visible=false end
+            else
+                txt.Visible=false
+            end
+        else
+            txt.Visible=false
+        end
     end)
 end)
 
--- =========================================================================
--- WEAPON GC HOOKS
--- =========================================================================
+-- GC HOOKS
 local originalFR={}
 local frObjs={}
 local SendFunc=nil
@@ -1620,8 +1913,7 @@ pcall(function()
                 end)
             end)
         end
-        if type(obj)=="function" and debug.getinfo(obj).name=="CreateVoxel"
-            and debug.getupvalue(obj,1) and tostring(debug.getupvalue(obj,1))=="Smoke" then
+        if type(obj)=="function" and debug.getinfo(obj).name=="CreateVoxel" and debug.getupvalue(obj,1) and tostring(debug.getupvalue(obj,1))=="Smoke" then
             pcall(function()
                 local old
                 old=hookfunction(obj,function(...)
@@ -1646,7 +1938,7 @@ pcall(function()
     end
 end)
 
-local Weapon
+local Weapon=nil
 local function getEquipped()
     if not getCurrentEquipped then return nil end
     local ok,res=pcall(function() return debug.getupvalue(getCurrentEquipped,1).CurrentEquipped end)
@@ -1655,68 +1947,21 @@ local function getEquipped()
 end
 task.spawn(function()
     while task.wait(1) do
-        pcall(function() if getEquipped then Weapon=getEquipped() end end)
+        pcall(function()
+            if getEquipped then Weapon=getEquipped() end
+        end)
     end
 end)
 
--- Tracer + impact
-local function createTracer(a,b)
-    if not (Toggles.BulletTracers and Toggles.BulletTracers.Value) then return end
-    if not a or not b then return end
-    local st=Options.TracerStyle.Value or "Block"
-    local col=Options.BulletTracersColor.Value
-    if Toggles.TracerRainbow.Value then col=Color3.fromHSV((tick()%5)/5,1,1) end
-    local dur=Options.TracerTime.Value
-    local p=Instance.new("Part")
-    p.Name="RH_Tracer"
-    if st=="Cylinder (Obelius)" then
-        p.Shape=Enum.PartType.Cylinder
-        p.Size=Vector3.new((a-b).Magnitude,0.12,0.12)
-        p.CFrame=CFrame.new(a,b)*CFrame.new(0,0,-p.Size.X/2)*CFrame.Angles(0,math.rad(90),0)
-    else
-        p.Size=Vector3.new(0.1,0.1,(a-b).Magnitude)
-        p.CFrame=CFrame.new(a,b)*CFrame.new(0,0,-p.Size.Z/2)
-    end
-    p.Anchored=true; p.CanCollide=false; p.CanQuery=false; p.CanTouch=false
-    p.Material=Enum.Material.Neon
-    p.Color=col
-    p.Transparency=0
-    p.CastShadow=false
-    p.Parent=Workspace
-    task.spawn(function()
-        local st2=tick()
-        while tick()-st2<dur do
-            p.Transparency=(tick()-st2)/dur
-            if Toggles.TracerRainbow.Value then p.Color=Color3.fromHSV((tick()%5)/5,1,1) end
-            task.wait()
-        end
-        p:Destroy()
-    end)
-end
-
-local function createImpact(pos)
-    if not (Toggles.BulletImpacts and Toggles.BulletImpacts.Value) then return end
-    if not pos then return end
-    local p=Instance.new("Part")
-    p.Name="RH_Impact"
-    p.Size=Vector3.new(0.6,0.6,0.6)
-    p.Position=pos
-    p.Anchored=true; p.CanCollide=false
-    p.Material=Enum.Material.Neon
-    p.Color=Options.BulletImpactsColor.Value
-    p.Transparency=0
-    p.Parent=Workspace
-    task.spawn(function()
-        local st=tick()
-        while tick()-st<3 do
-            p.Transparency=(tick()-st)/3
-            task.wait()
-        end
-        p:Destroy()
-    end)
-end
-
-local HitSoundPresets={Neverlose="rbxassetid://139452805868562",Skeet="rbxassetid://83717596220569",Bell="rbxassetid://96481309571950",Bell2="rbxassetid://124010691633262",Bubble="rbxassetid://104824514322839",Rust="rbxassetid://1255040462",Coins="rbxassetid://5613553529",Pick="rbxassetid://8616930816"}
+local HitSoundPresets={}
+HitSoundPresets["Neverlose"]="rbxassetid://139452805868562"
+HitSoundPresets["Skeet"]="rbxassetid://83717596220569"
+HitSoundPresets["Bell"]="rbxassetid://96481309571950"
+HitSoundPresets["Bell2"]="rbxassetid://124010691633262"
+HitSoundPresets["Bubble"]="rbxassetid://104824514322839"
+HitSoundPresets["Rust"]="rbxassetid://1255040462"
+HitSoundPresets["Coins"]="rbxassetid://5613553529"
+HitSoundPresets["Pick"]="rbxassetid://8616930816"
 
 local function PlayHitSound()
     pcall(function()
@@ -1728,16 +1973,23 @@ local function PlayHitSound()
                 if not ci:find("rbxassetid://") then
                     local clean=ci:gsub("%D","")
                     if clean~="" then sid="rbxassetid://"..clean end
-                else sid=ci end
+                else
+                    sid=ci
+                end
             end
         end
-        if sid=="" then sid=HitSoundPresets[Options.HitSoundPreset and Options.HitSoundPreset.Value or "Neverlose"] or "rbxassetid://139452805868562" end
+        if sid=="" then
+            sid=HitSoundPresets[Options.HitSoundPreset and Options.HitSoundPreset.Value or "Neverlose"] or "rbxassetid://139452805868562"
+        end
         local s=Instance.new("Sound")
         s.SoundId=sid
         s.Volume=Options.HitSoundVolume and Options.HitSoundVolume.Value or 1
         s.Parent=SoundService
         s:Play()
-        task.spawn(function() s.Ended:Wait() s:Destroy() end)
+        task.spawn(function()
+            s.Ended:Wait()
+            s:Destroy()
+        end)
     end)
 end
 
@@ -1751,7 +2003,9 @@ task.spawn(function()
         local lines={}
         for i=1,4 do
             local l=Drawing.new("Line")
-            l.Thickness=thick; l.Transparency=1; l.Visible=false
+            l.Thickness=thick
+            l.Transparency=1
+            l.Visible=false
             lines[i]=l
         end
         table.insert(active,{lines=lines,wpos=pos,st=tick(),ex=tick()+dur})
@@ -1761,7 +2015,9 @@ task.spawn(function()
             local now=tick()
             local en=Toggles.HitMarkerEnabled and Toggles.HitMarkerEnabled.Value
             local col=Options.HitMarkerColor and Options.HitMarkerColor.Value or Color3.new(1,1,1)
-            if Toggles.HitMarkerRainbow and Toggles.HitMarkerRainbow.Value then col=Color3.fromHSV((now%5)/5,1,1) end
+            if Toggles.HitMarkerRainbow and Toggles.HitMarkerRainbow.Value then
+                col=Color3.fromHSV((now%5)/5,1,1)
+            end
             local bsz=Options.HitMarkerSize and Options.HitMarkerSize.Value or 25
             local ss=Options.HitMarkerSpinSpeed and Options.HitMarkerSpinSpeed.Value or 720
             local pulse=1+0.35*math.sin(now*math.pi)
@@ -1784,19 +2040,85 @@ task.spawn(function()
                             l.Color=col
                             l.Thickness=Options.HitMarkerThickness and Options.HitMarkerThickness.Value or 2
                             local a=ang+math.rad(bA[j])
-                            local ca,sa=math.cos(a),math.sin(a)
+                            local ca=math.cos(a)
+                            local sa=math.sin(a)
                             l.From=center+Vector2.new(ca*gap,sa*gap)
                             l.To=center+Vector2.new(ca*(gap+sz),sa*(gap+sz))
                             l.Visible=true
                         end
-                    else for _,l in ipairs(d.lines) do l.Visible=false end end
+                    else
+                        for _,l in ipairs(d.lines) do l.Visible=false end
+                    end
                 end
             end
         end)
     end)
 end)
 
--- Shoot hook
+local function createTracer(a,b)
+    if not (Toggles.BulletTracers and Toggles.BulletTracers.Value) then return end
+    if not a or not b then return end
+    local st=Options.TracerStyle.Value or "Block"
+    local col=Options.BulletTracersColor.Value
+    if Toggles.TracerRainbow.Value then
+        col=Color3.fromHSV((tick()%5)/5,1,1)
+    end
+    local dur=Options.TracerTime.Value
+    local p=Instance.new("Part")
+    p.Name="RH_Tracer"
+    if st=="Cylinder (Obelius)" then
+        p.Shape=Enum.PartType.Cylinder
+        p.Size=Vector3.new((a-b).Magnitude,0.12,0.12)
+        p.CFrame=CFrame.new(a,b)*CFrame.new(0,0,-p.Size.X/2)*CFrame.Angles(0,math.rad(90),0)
+    else
+        p.Size=Vector3.new(0.1,0.1,(a-b).Magnitude)
+        p.CFrame=CFrame.new(a,b)*CFrame.new(0,0,-p.Size.Z/2)
+    end
+    p.Anchored=true
+    p.CanCollide=false
+    p.CanQuery=false
+    p.CanTouch=false
+    p.Material=Enum.Material.Neon
+    p.Color=col
+    p.Transparency=0
+    p.CastShadow=false
+    p.Parent=Workspace
+    task.spawn(function()
+        local s0=tick()
+        while tick()-s0<dur do
+            p.Transparency=(tick()-s0)/dur
+            if Toggles.TracerRainbow.Value then
+                p.Color=Color3.fromHSV((tick()%5)/5,1,1)
+            end
+            task.wait()
+        end
+        p:Destroy()
+    end)
+end
+
+local function createImpact(pos)
+    if not (Toggles.BulletImpacts and Toggles.BulletImpacts.Value) then return end
+    if not pos then return end
+    local p=Instance.new("Part")
+    p.Name="RH_Impact"
+    p.Size=Vector3.new(0.6,0.6,0.6)
+    p.Position=pos
+    p.Anchored=true
+    p.CanCollide=false
+    p.Material=Enum.Material.Neon
+    p.Color=Options.BulletImpactsColor.Value
+    p.Transparency=0
+    p.Parent=Workspace
+    task.spawn(function()
+        local s0=tick()
+        while tick()-s0<3 do
+            p.Transparency=(tick()-s0)/3
+            task.wait()
+        end
+        p:Destroy()
+    end)
+end
+
 pcall(function()
     if not SendFunc then return end
     local oldshoot=hookfunction(SendFunc,function(...)
@@ -1807,11 +2129,18 @@ pcall(function()
                 if type(bullet.Hits)=="table" then
                     for _,hd in pairs(bullet.Hits) do
                         local tp=nil
-                        if Toggles.Ragebot.Value and RageTarget then tp=RageTarget
+                        if Toggles.Ragebot.Value and RageTarget then
+                            tp=RageTarget
                         elseif cA and Toggles.CubeAimbotEnabled.Value and CubeTarget then
                             local chosen=Options.CubeHitPart.Value
-                            tp=CubeTarget.Parent and CubeTarget.Parent:FindFirstChild(chosen) or CubeTarget
-                        elseif Toggles.SilentAim.Value and SilentTarget then tp=SilentTarget end
+                            if CubeTarget.Parent then
+                                tp=CubeTarget.Parent:FindFirstChild(chosen) or CubeTarget
+                            else
+                                tp=CubeTarget
+                            end
+                        elseif Toggles.SilentAim.Value and SilentTarget then
+                            tp=SilentTarget
+                        end
                         if tp then
                             hd.Instance=tp
                             hd.Position=tp.Position
@@ -1827,12 +2156,16 @@ pcall(function()
                                     local anc=hd.Instance:FindFirstAncestorOfClass("Model")
                                     if anc then
                                         local hp=Players:GetPlayerFromCharacter(anc)
-                                        if hp and hp~=LP and getTeam(hp)~=getTeam(LP) then enemyHit=true end
+                                        if hp and hp~=LP and getTeam(hp)~=getTeam(LP) then
+                                            enemyHit=true
+                                        end
                                     end
                                 end
                                 if enemyHit or tp then
                                     PlayHitSound()
-                                    if triggerHMEvent then pcall(function() triggerHMEvent(b) end) end
+                                    if triggerHMEvent then
+                                        pcall(function() triggerHMEvent(b) end)
+                                    end
                                 end
                             end
                         end)
@@ -1844,7 +2177,6 @@ pcall(function()
     end)
 end)
 
--- Ragebot loop
 task.spawn(function()
     while true do
         task.wait(Options.RageDelay and Options.RageDelay.Value or 0.02)
@@ -1854,7 +2186,6 @@ task.spawn(function()
     end
 end)
 
--- Triggerbot
 task.spawn(function()
     local trp=RaycastParams.new()
     trp.FilterType=Enum.RaycastFilterType.Exclude
@@ -1900,7 +2231,6 @@ task.spawn(function()
     end
 end)
 
--- Firerate
 task.spawn(function()
     while task.wait(0.05) do
         pcall(function()
@@ -1925,7 +2255,6 @@ task.spawn(function()
     end
 end)
 
--- Instant reload
 task.spawn(function()
     local RELOAD={Reload=true,ReloadStart=true,ReloadAction=true,ReloadEnd=true}
     local SPEED=199
@@ -1950,7 +2279,7 @@ task.spawn(function()
             end
         end)
     end
-    local lastW
+    local lastW=nil
     while task.wait(0.1) do
         pcall(function()
             if not getEquipped then return end
@@ -1980,9 +2309,7 @@ task.spawn(function()
     end
 end)
 
--- =========================================================================
 -- WEAPON CHAMS
--- =========================================================================
 local activeNeon={}
 RunService.RenderStepped:Connect(function()
     pcall(function()
@@ -2000,7 +2327,9 @@ RunService.RenderStepped:Connect(function()
             end
         end
         if not en or not wm then
-            for _,h in pairs(activeNeon) do if h and h.Parent then h:Destroy() end end
+            for _,h in pairs(activeNeon) do
+                if h and h.Parent then h:Destroy() end
+            end
             activeNeon={}
             return
         end
@@ -2067,9 +2396,44 @@ RunService.RenderStepped:Connect(function()
     end)
 end)
 
--- =========================================================================
+-- CUSTOM HANDS
+RunService.RenderStepped:Connect(function()
+    pcall(function()
+        if not (Toggles.CustomHandsEnabled and Toggles.CustomHandsEnabled.Value) then return end
+        local xO=Options.HandsX and Options.HandsX.Value or 0.2
+        local yO=Options.HandsY and Options.HandsY.Value or -0.155
+        local zO=Options.HandsZ and Options.HandsZ.Value or 0.075
+        for _,ch in ipairs(Camera:GetChildren()) do
+            if ch:IsA("Model") then
+                local s=ch:FindFirstChild("Stats")
+                if s then
+                    local d=s:FindFirstChild("Default")
+                    if d and d:IsA("Vector3Value") then
+                        d.Value=Vector3.new(xO,yO,zO)
+                    end
+                end
+            end
+        end
+    end)
+end)
+
+-- CUSTOM FOV + THIRD PERSON
+RunService.RenderStepped:Connect(function()
+    pcall(function()
+        if Toggles.CustomFovToggle and Toggles.CustomFovToggle.Value then
+            Camera.FieldOfView=Options.FovAmount and Options.FovAmount.Value or 90
+        end
+        if Toggles.ThirdPerson and Toggles.ThirdPerson.Value then
+            local d=Options.ThirdPersonDist and Options.ThirdPersonDist.Value or 10
+            d=math.clamp(d,5,50)
+            LP.CameraMode=Enum.CameraMode.Classic
+            LP.CameraMaxZoomDistance=d
+            LP.CameraMinZoomDistance=d
+        end
+    end)
+end)
+
 -- CHAMS
--- =========================================================================
 task.spawn(function()
     local folder
     pcall(function()
@@ -2078,10 +2442,10 @@ task.spawn(function()
     end)
     local HL={}
     local function getM(s)
-        if s=="Metal" then return Enum.Material.Metal
-        elseif s=="ForceField" then return Enum.Material.ForceField
-        elseif s=="SmoothPlastic" then return Enum.Material.SmoothPlastic
-        else return Enum.Material.Neon end
+        if s=="Metal" then return Enum.Material.Metal end
+        if s=="ForceField" then return Enum.Material.ForceField end
+        if s=="SmoothPlastic" then return Enum.Material.SmoothPlastic end
+        return Enum.Material.Neon
     end
     local function remCh(c)
         if HL[c] then
@@ -2116,9 +2480,13 @@ task.spawn(function()
         local enemies={}
         for _,obj in ipairs(cf:GetDescendants()) do
             if obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") and obj~=LP.Character then
-                if tchk and isAlly(obj) then remCh(obj) continue end
-                if not en then remCh(obj) continue end
-                table.insert(enemies,obj)
+                if tchk and isAlly(obj) then
+                    remCh(obj)
+                elseif not en then
+                    remCh(obj)
+                else
+                    table.insert(enemies,obj)
+                end
             end
         end
         for _,ch in ipairs(enemies) do
@@ -2130,7 +2498,9 @@ task.spawn(function()
                 hu.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
                 hu.Parent=folder
                 HL[ch]={v=hv,u=hu}
-                ch.AncestryChanged:Connect(function(_,p) if p==nil then remCh(ch) end end)
+                ch.AncestryChanged:Connect(function(_,p)
+                    if p==nil then remCh(ch) end
+                end)
             end
             local hl=HL[ch]
             local seen=isVis(ch)
@@ -2152,8 +2522,11 @@ task.spawn(function()
                 pcall(function()
                     if part:IsA("SurfaceAppearance") or part:IsA("Decal") or part:IsA("Texture") then
                         part:Destroy()
-                    elseif part:IsA("MeshPart") and part.TextureID~="" then part.TextureID=""
-                    elseif part:IsA("SpecialMesh") and part.TextureId~="" then part.TextureId="" end
+                    elseif part:IsA("MeshPart") and part.TextureID~="" then
+                        part.TextureID=""
+                    elseif part:IsA("SpecialMesh") and part.TextureId~="" then
+                        part.TextureId=""
+                    end
                     if part:IsA("BasePart") then
                         if not part:GetAttribute("OrigMat") then
                             part:SetAttribute("OrigMat",part.Material.Name)
@@ -2166,52 +2539,12 @@ task.spawn(function()
             end
         end
     end)
-    Players.PlayerRemoving:Connect(function(p) if p.Character then remCh(p.Character) end end)
-end)
-
--- =========================================================================
--- CUSTOM HANDS
--- =========================================================================
-RunService.RenderStepped:Connect(function()
-    pcall(function()
-        if not (Toggles.CustomHandsEnabled and Toggles.CustomHandsEnabled.Value) then return end
-        local xO=Options.HandsX and Options.HandsX.Value or 0.2
-        local yO=Options.HandsY and Options.HandsY.Value or -0.155
-        local zO=Options.HandsZ and Options.HandsZ.Value or 0.075
-        for _,ch in ipairs(Camera:GetChildren()) do
-            if ch:IsA("Model") then
-                local s=ch:FindFirstChild("Stats")
-                if s then
-                    local d=s:FindFirstChild("Default")
-                    if d and d:IsA("Vector3Value") then
-                        d.Value=Vector3.new(xO,yO,zO)
-                    end
-                end
-            end
-        end
+    Players.PlayerRemoving:Connect(function(p)
+        if p.Character then remCh(p.Character) end
     end)
 end)
 
--- =========================================================================
--- CUSTOM FOV + THIRD PERSON
--- =========================================================================
-RunService.RenderStepped:Connect(function()
-    pcall(function()
-        if Toggles.CustomFovToggle and Toggles.CustomFovToggle.Value then
-            Camera.FieldOfView=Options.FovAmount and Options.FovAmount.Value or 90
-        end
-        if Toggles.ThirdPerson and Toggles.ThirdPerson.Value then
-            local d=math.clamp(Options.ThirdPersonDist and Options.ThirdPersonDist.Value or 10,5,50)
-            LP.CameraMode=Enum.CameraMode.Classic
-            LP.CameraMaxZoomDistance=d
-            LP.CameraMinZoomDistance=d
-        end
-    end)
-end)
-
--- =========================================================================
--- SCOPE GUI
--- =========================================================================
+-- SCOPE CROSSHAIR GUI
 task.spawn(function()
     local gui=Instance.new("ScreenGui")
     gui.Name="RH_Scope"
@@ -2260,9 +2593,9 @@ task.spawn(function()
     end)
 end)
 
--- Remove scope
+-- REMOVE SCOPE
 task.spawn(function()
-    local cached
+    local cached=nil
     RunService.RenderStepped:Connect(function()
         if cached and not cached.Parent then cached=nil end
         if not cached then
@@ -2277,23 +2610,25 @@ task.spawn(function()
             if cached.Size~=UDim2.new(1,0,1,0) then cached.Size=UDim2.new(1,0,1,0) end
             return
         end
-        if cached.Visible==true then cached.Size=UDim2.new(0,0,0,0)
+        if cached.Visible==true then
+            cached.Size=UDim2.new(0,0,0,0)
         else
             if cached.Size~=UDim2.new(1,0,1,0) then cached.Size=UDim2.new(1,0,1,0) end
         end
     end)
 end)
 
--- Scope FOV
+-- CUSTOM SCOPE FOV
 task.spawn(function()
     RunService.RenderStepped:Connect(function()
         pcall(function()
             if not (Toggles.CustomScopeFov and Toggles.CustomScopeFov.Value) then return end
             local pg=LP:FindFirstChild("PlayerGui")
             if not pg then return end
-            local sc=pg:FindFirstChild("MainGui") and pg.MainGui:FindFirstChild("Gameplay")
-                and pg.MainGui.Gameplay:FindFirstChild("Middle")
-                and pg.MainGui.Gameplay.Middle:FindFirstChild("SniperScope")
+            local sc=pg:FindFirstChild("MainGui")
+            if sc then sc=sc:FindFirstChild("Gameplay") end
+            if sc then sc=sc:FindFirstChild("Middle") end
+            if sc then sc=sc:FindFirstChild("SniperScope") end
             if sc and sc.Visible and Options.ScopeFovValue then
                 Camera.FieldOfView=Options.ScopeFovValue.Value
             end
@@ -2301,17 +2636,14 @@ task.spawn(function()
     end)
 end)
 
--- =========================================================================
--- SKYBOX + ATMOSPHERE
--- =========================================================================
-local skyTbl={
-    Night={SkyboxBk="rbxassetid://1514717643",SkyboxDn="rbxassetid://1514716936",SkyboxFt="rbxassetid://1514715910",SkyboxLf="rbxassetid://1514714945",SkyboxRt="rbxassetid://1514714011",SkyboxUp="rbxassetid://1514713374"},
-    ["Ocean Sunset"]={SkyboxBk="rbxassetid://17525686840",SkyboxDn="rbxassetid://17525678473",SkyboxFt="rbxassetid://17525684686",SkyboxLf="rbxassetid://17525680663",SkyboxRt="rbxassetid://17525682665",SkyboxUp="rbxassetid://17525674545"},
-    ["Deep Space"]={SkyboxBk="http://www.roblox.com/asset/?id=159248188",SkyboxDn="http://www.roblox.com/asset/?id=159248183",SkyboxFt="http://www.roblox.com/asset/?id=159248187",SkyboxLf="http://www.roblox.com/asset/?id=159248173",SkyboxRt="http://www.roblox.com/asset/?id=159248192",SkyboxUp="http://www.roblox.com/asset/?id=159248176"},
-    ["Purple Nebula"]={SkyboxBk="http://www.roblox.com/asset/?id=15983968922",SkyboxDn="http://www.roblox.com/asset/?id=15983966825",SkyboxFt="http://www.roblox.com/asset/?id=15983965025",SkyboxLf="http://www.roblox.com/asset/?id=15983967420",SkyboxRt="http://www.roblox.com/asset/?id=15983966246",SkyboxUp="http://www.roblox.com/asset/?id=15983964246"},
-    Minecraft={SkyboxBk="http://www.roblox.com/asset/?id=8735166756",SkyboxDn="http://www.roblox.com/asset/?id=8735166707",SkyboxFt="http://www.roblox.com/asset/?id=8735231668",SkyboxLf="http://www.roblox.com/asset/?id=8735166755",SkyboxRt="http://www.roblox.com/asset/?id=8735166751",SkyboxUp="http://www.roblox.com/asset/?id=8735166729"},
-    Retro={SkyboxBk="rbxasset://sky/null_plainsky512_bk.jpg",SkyboxDn="rbxasset://sky/null_plainsky512_dn.jpg",SkyboxFt="rbxasset://sky/null_plainsky512_ft.jpg",SkyboxLf="rbxasset://sky/null_plainsky512_lf.jpg",SkyboxRt="rbxasset://sky/null_plainsky512_rt.jpg",SkyboxUp="rbxasset://sky/null_plainsky512_up.jpg"},
-}
+-- SKYBOX
+local skyTbl={}
+skyTbl["Night"]={SkyboxBk="rbxassetid://1514717643",SkyboxDn="rbxassetid://1514716936",SkyboxFt="rbxassetid://1514715910",SkyboxLf="rbxassetid://1514714945",SkyboxRt="rbxassetid://1514714011",SkyboxUp="rbxassetid://1514713374"}
+skyTbl["Ocean Sunset"]={SkyboxBk="rbxassetid://17525686840",SkyboxDn="rbxassetid://17525678473",SkyboxFt="rbxassetid://17525684686",SkyboxLf="rbxassetid://17525680663",SkyboxRt="rbxassetid://17525682665",SkyboxUp="rbxassetid://17525674545"}
+skyTbl["Deep Space"]={SkyboxBk="http://www.roblox.com/asset/?id=159248188",SkyboxDn="http://www.roblox.com/asset/?id=159248183",SkyboxFt="http://www.roblox.com/asset/?id=159248187",SkyboxLf="http://www.roblox.com/asset/?id=159248173",SkyboxRt="http://www.roblox.com/asset/?id=159248192",SkyboxUp="http://www.roblox.com/asset/?id=159248176"}
+skyTbl["Purple Nebula"]={SkyboxBk="http://www.roblox.com/asset/?id=15983968922",SkyboxDn="http://www.roblox.com/asset/?id=15983966825",SkyboxFt="http://www.roblox.com/asset/?id=15983965025",SkyboxLf="http://www.roblox.com/asset/?id=15983967420",SkyboxRt="http://www.roblox.com/asset/?id=15983966246",SkyboxUp="http://www.roblox.com/asset/?id=15983964246"}
+skyTbl["Minecraft"]={SkyboxBk="http://www.roblox.com/asset/?id=8735166756",SkyboxDn="http://www.roblox.com/asset/?id=8735166707",SkyboxFt="http://www.roblox.com/asset/?id=8735231668",SkyboxLf="http://www.roblox.com/asset/?id=8735166755",SkyboxRt="http://www.roblox.com/asset/?id=8735166751",SkyboxUp="http://www.roblox.com/asset/?id=8735166729"}
+skyTbl["Retro"]={SkyboxBk="rbxasset://sky/null_plainsky512_bk.jpg",SkyboxDn="rbxasset://sky/null_plainsky512_dn.jpg",SkyboxFt="rbxasset://sky/null_plainsky512_ft.jpg",SkyboxLf="rbxasset://sky/null_plainsky512_lf.jpg",SkyboxRt="rbxasset://sky/null_plainsky512_rt.jpg",SkyboxUp="rbxasset://sky/null_plainsky512_up.jpg"}
 
 local function UpdateSky(name)
     local data=skyTbl[name]
@@ -2324,7 +2656,9 @@ local function UpdateSky(name)
         for _,v in pairs(Lighting:GetChildren()) do
             if v:IsA("Sky") then v:Destroy() end
         end
-        sky=Instance.new("Sky"); sky.Name="RH_Sky"; sky.Parent=Lighting
+        sky=Instance.new("Sky")
+        sky.Name="RH_Sky"
+        sky.Parent=Lighting
     end
     sky.SkyboxBk=data.SkyboxBk
     sky.SkyboxDn=data.SkyboxDn
@@ -2351,7 +2685,9 @@ task.spawn(function()
     while task.wait(0.3) do
         pcall(function()
             if Toggles.Atmosphere and Toggles.Atmosphere.Value then
-                if Toggles.EnableSkybox and Toggles.EnableSkybox.Value then Toggles.EnableSkybox:SetValue(false) end
+                if Toggles.EnableSkybox and Toggles.EnableSkybox.Value then
+                    Toggles.EnableSkybox:SetValue(false)
+                end
                 local a=Lighting:FindFirstChildOfClass("Atmosphere")
                 if not a then a=Instance.new("Atmosphere",Lighting) end
                 a.Density=Options.AtmosphereDensity and Options.AtmosphereDensity.Value or 0.3
@@ -2365,9 +2701,7 @@ task.spawn(function()
     end
 end)
 
--- =========================================================================
 -- GRENADE TRACERS
--- =========================================================================
 local TrackedGrenades={}
 local GPat={"grenade","flash","molotov","bang","frag","he_","_he","throwable","projectile","nade","incendiary","decoy","c4"}
 local GBlack={"gun","rifle","pistol","bullet","casing","debris","light","muzzle","launch","effect","arm","leg","torso","head","humanoid","mesh","handle","constraint","weld","motor","zone","voxel"}
@@ -2375,9 +2709,13 @@ local GBlack={"gun","rifle","pistol","bullet","casing","debris","light","muzzle"
 local function isGrenade(obj)
     if not obj:IsA("BasePart") and not obj:IsA("Model") then return false end
     local n=obj.Name:lower()
-    for _,p in ipairs(GBlack) do if n:find(p) then return false end end
+    for _,p in ipairs(GBlack) do
+        if n:find(p) then return false end
+    end
     if #n>20 and n:find("%-") then return true end
-    for _,p in ipairs(GPat) do if n:find(p) then return true end end
+    for _,p in ipairs(GPat) do
+        if n:find(p) then return true end
+    end
     return false
 end
 
@@ -2386,10 +2724,13 @@ local function StartGT(part)
     if TrackedGrenades[part] then return end
     TrackedGrenades[part]=true
     local MAXT=30
-    local hist,lines={},{}
+    local hist={}
+    local lines={}
     for i=1,MAXT do
         local l=Drawing.new("Line")
-        l.Visible=false; l.Thickness=2; l.Transparency=1
+        l.Visible=false
+        l.Thickness=2
+        l.Transparency=1
         lines[i]=l
     end
     local conn
@@ -2409,19 +2750,25 @@ local function StartGT(part)
         if #hist>MAXT+1 then table.remove(hist) end
         for i=1,MAXT do
             local l=lines[i]
-            local p1,p2=hist[i],hist[i+1]
-            if not p1 or not p2 then l.Visible=false continue end
-            local s1,o1=Camera:WorldToViewportPoint(p1)
-            local s2,o2=Camera:WorldToViewportPoint(p2)
-            if (o1 or o2) and s1.Z>0 and s2.Z>0 then
-                local fade=1-(i/MAXT)
-                l.From=Vector2.new(s1.X,s1.Y)
-                l.To=Vector2.new(s2.X,s2.Y)
-                l.Color=col
-                l.Thickness=math.max(2*fade,0.5)
-                l.Transparency=1-fade
-                l.Visible=true
-            else l.Visible=false end
+            local p1=hist[i]
+            local p2=hist[i+1]
+            if not p1 or not p2 then
+                l.Visible=false
+            else
+                local s1,o1=Camera:WorldToViewportPoint(p1)
+                local s2,o2=Camera:WorldToViewportPoint(p2)
+                if (o1 or o2) and s1.Z>0 and s2.Z>0 then
+                    local fade=1-(i/MAXT)
+                    l.From=Vector2.new(s1.X,s1.Y)
+                    l.To=Vector2.new(s2.X,s2.Y)
+                    l.Color=col
+                    l.Thickness=math.max(2*fade,0.5)
+                    l.Transparency=1-fade
+                    l.Visible=true
+                else
+                    l.Visible=false
+                end
+            end
         end
     end)
 end
@@ -2437,7 +2784,9 @@ local function TryTrack(obj)
     if Players:GetPlayerFromCharacter(obj) then return end
     if Players:GetPlayerFromCharacter(obj.Parent) then return end
     TrackedGrenades[obj]=true
-    obj.AncestryChanged:Connect(function(_,p) if p==nil then TrackedGrenades[obj]=nil end end)
+    obj.AncestryChanged:Connect(function(_,p)
+        if p==nil then TrackedGrenades[obj]=nil end
+    end)
     StartGT(part)
 end
 
@@ -2449,24 +2798,39 @@ task.spawn(function()
     Workspace.ChildAdded:Connect(function(c)
         task.wait()
         if isGrenade(c) then TryTrack(c) end
-        c.ChildAdded:Connect(function(s) task.wait() if isGrenade(s) then TryTrack(s) end end)
+        c.ChildAdded:Connect(function(s)
+            task.wait()
+            if isGrenade(s) then TryTrack(s) end
+        end)
     end)
 end)
 
--- =========================================================================
--- SKIN CHANGER (простой)
--- =========================================================================
+-- SKIN CHANGER
 task.spawn(function()
     pcall(function()
-        local skins=RS:FindFirstChild("Assets") and RS.Assets:FindFirstChild("Skins")
+        local skins=RS:FindFirstChild("Assets")
         if not skins then return end
-        local skM=RS:FindFirstChild("Database") and RS.Database:FindFirstChild("Components") and RS.Database.Components:FindFirstChild("Libraries") and RS.Database.Components.Libraries:FindFirstChild("Skins")
-        local vM=RS:FindFirstChild("Classes") and RS.Classes:FindFirstChild("WeaponComponent") and RS.Classes.WeaponComponent:FindFirstChild("Classes") and RS.Classes.WeaponComponent.Classes:FindFirstChild("Viewmodel")
+        skins=skins:FindFirstChild("Skins")
+        if not skins then return end
+        local skM=RS:FindFirstChild("Database")
+        if skM then skM=skM:FindFirstChild("Components") end
+        if skM then skM=skM:FindFirstChild("Libraries") end
+        if skM then skM=skM:FindFirstChild("Skins") end
+        local vM=RS:FindFirstChild("Classes")
+        if vM then vM=vM:FindFirstChild("WeaponComponent") end
+        if vM then vM=vM:FindFirstChild("Classes") end
+        if vM then vM=vM:FindFirstChild("Viewmodel") end
         if not skM or not vM then return end
         local Sk=require(skM)
         local Vm=require(vM)
-        local baseKnives={["CT Knife"]=true,["T Knife"]=true,Knife=true}
-        local function isKnife(w) return baseKnives[w] end
+        local baseKnives={}
+        baseKnives["CT Knife"]=true
+        baseKnives["T Knife"]=true
+        baseKnives["Knife"]=true
+        local function isKnife(w)
+            if baseKnives[w] then return true end
+            return false
+        end
         local oGCM=Sk.GetCameraModel
         if oGCM then
             Sk.GetCameraModel=function(w,sk,...)
@@ -2492,8 +2856,5 @@ task.spawn(function()
     end)
 end)
 
--- =========================================================================
--- FINAL
--- =========================================================================
 Notification:Notify({Title="RAINBOW HUB",Content="BloxStrike loaded. Key: Insert",Icon="clipboard"})
 print("[RAINBOW HUB] BloxStrike loaded successfully")
