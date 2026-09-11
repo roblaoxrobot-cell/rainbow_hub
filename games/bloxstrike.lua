@@ -1,4 +1,4 @@
--- RAINBOW HUB | BloxStrike | Fatality UI
+-- RAINBOW HUB | BloxStrike | Fatality UI 1234
 local CoreGui=game:GetService("CoreGui")
 local Players=game:GetService("Players")
 local Workspace=game:GetService("Workspace")
