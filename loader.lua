@@ -1,5 +1,5 @@
 -- =========================================================
---  HUB LOADER — games selector
+--  RAINBOW HUB — Loader (games selector)
 -- =========================================================
 
 local REPO   = "roblaoxrobot-cell/rainbow_hub"
@@ -47,7 +47,6 @@ local function Shadow(parent)
     return s
 end
 
--- STATUS
 local Status = {
     UNIVERSAL="In development", RIVALS="Working", FLUXOPVP="Working",
     MM2="Working", SELLLEMONS="Working", PENABLOX="Working",
@@ -61,7 +60,6 @@ local function StatusColor(t)
     return Colors.Muted
 end
 
--- UI
 local Gui = Instance.new("ScreenGui", CoreGui)
 Gui.Name = K()
 Gui.ResetOnSpawn = false
@@ -182,7 +180,6 @@ LoadBtn.FontFace, LoadBtn.TextSize, LoadBtn.TextColor3 = FontSB, 13, Color3.new(
 LoadBtn.Text, LoadBtn.AutoButtonColor = "LOAD SCRIPT", false
 Instance.new("UICorner", LoadBtn).CornerRadius = UDim.new(0,2)
 
--- GAME LIST
 local Selected
 local Buttons = {}
 local Icons = {}
@@ -258,7 +255,6 @@ LoadBtn.MouseButton1Click:Connect(function()
     local file = Selected
 
     task.spawn(function()
-        -- try games/ folder first, then root
         local urls = {
             BASE .. "games/" .. file .. ".lua",
             BASE .. file .. ".lua",
@@ -303,7 +299,6 @@ LoadBtn.MouseButton1Click:Connect(function()
     end)
 end)
 
--- Drag
 local drag, dragStart, startPos
 Header.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -322,7 +317,6 @@ uis.InputChanged:Connect(function(input)
     end
 end)
 
--- REGISTER GAMES  (file name / status key — filename matches file in repo)
 AddGame("Universal",        6026568198, "universal",     "UNIVERSAL")
 AddGame("Rivals",           6041285839, "rivals",        "RIVALS")
 AddGame("Fluxo PvP",        6031265976, "fluxopvp",      "FLUXOPVP")
@@ -333,7 +327,6 @@ AddGame("Europhium HvH",    7743867811, "europhium",     "EUROPHIUM")
 AddGame("Sultanisimus HvH", 6026568198, "sultanisimus",  "SULTANISIMUS")
 AddGame("Ninja Legends",    6041285839, "ninjalegends",  "NINJALEGENDS")
 
--- START
 task.spawn(function()
     Main.Size = UDim2.new(0,560,0,0)
     Tween(MShadow, {ImageTransparency=0.75}, 0.8)
