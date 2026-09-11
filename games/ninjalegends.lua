@@ -1,5 +1,6 @@
 -- =========================================================================
--- NINJA LEGENDS  |  Fatality UI  |  Rainbow Hub Port
+-- NINJA LEGENDS | Fatality UI | Rainbow Hub
+-- File: games/ninjalegends.lua
 -- =========================================================================
 
 local Players       = game:GetService("Players")
@@ -28,7 +29,10 @@ end
 
 local F = GetFatality()
 if not F then return end
-if getgenv().NL_Loaded then return end
+if getgenv().NL_Loaded then
+    warn("[NL] Already loaded")
+    return
+end
 getgenv().NL_Loaded = true
 
 local Notification = F:CreateNotifier()
@@ -69,7 +73,6 @@ local G = {
     AutoBuySword=false, AutoBuyBelts=false, AutoBuySkills=false, AutoBuyShurikens=false,
     AutoFarmChi=false, AutoFarmCoin=false, AutoHoops=false,
     OpenCrystal=false, CrystalName="",
-    EvolvePet=false,
     Invisibility=false,
     InfJump=false,
 }
@@ -81,11 +84,13 @@ local ninjaEvent = LP:WaitForChild("ninjaEvent", 10)
 -- =========================================================================
 do
     local S = MainMenu:AddSection({Position='left', Name="CHARACTER"})
+
     S:AddSlider({Name="Speed", Flag="NL_Speed", Default=16, Min=0, Max=500,
         Callback=function(v)
             local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
             if hum then hum.WalkSpeed = v end
         end})
+
     S:AddSlider({Name="Jump Power", Flag="NL_Jump", Default=50, Min=0, Max=500,
         Callback=function(v)
             local hum = LP.Character and LP.Character:FindFirstChildOfClass("Humanoid")
@@ -100,9 +105,9 @@ end
 -- [ AUTO FARM ]
 -- =========================================================================
 do
-    local Farm = FarmMenu:AddSection({Position='left',  Name="AUTO FARM"})
-    local Buy  = FarmMenu:AddSection({Position='center',Name="AUTO BUY"})
-    local Chi  = FarmMenu:AddSection({Position='right', Name="COLLECT"})
+    local Farm = FarmMenu:AddSection({Position='left',   Name="AUTO FARM"})
+    local Buy  = FarmMenu:AddSection({Position='center', Name="AUTO BUY"})
+    local Chi  = FarmMenu:AddSection({Position='right',  Name="COLLECT"})
 
     -- Auto Swing
     Farm:AddToggle({Name="Auto Swing", Flag="NL_AutoSwing", Default=false,
@@ -111,7 +116,9 @@ do
             task.spawn(function()
                 while G.AutoSwing do
                     task.wait(0.1)
-                    pcall(function() if ninjaEvent then ninjaEvent:FireServer("swingKatana") end end)
+                    pcall(function()
+                        if ninjaEvent then ninjaEvent:FireServer("swingKatana") end
+                    end)
                 end
             end)
         end})
@@ -124,8 +131,8 @@ do
                 while G.AutoSell do
                     task.wait(0.1)
                     pcall(function()
-                        local c = Workspace:FindFirstChild("sellAreaCircles")
-                            and Workspace.sellAreaCircles:FindFirstChild("sellAreaCircle15")
+                        local folder = Workspace:FindFirstChild("sellAreaCircles")
+                        local c = folder and folder:FindFirstChild("sellAreaCircle15")
                         local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
                         local dest = Workspace:FindFirstChild("Part")
                         if c and c:FindFirstChild("circleInner") and hrp and dest then
@@ -145,7 +152,9 @@ do
             task.spawn(function()
                 while G.AutoBuySword do
                     task.wait(0.5)
-                    pcall(function() if ninjaEvent then ninjaEvent:FireServer("buyAllSwords","Blazing Vortex Island") end end)
+                    pcall(function()
+                        if ninjaEvent then ninjaEvent:FireServer("buyAllSwords","Blazing Vortex Island") end
+                    end)
                 end
             end)
         end})
@@ -157,7 +166,9 @@ do
             task.spawn(function()
                 while G.AutoBuyBelts do
                     task.wait(0.5)
-                    pcall(function() if ninjaEvent then ninjaEvent:FireServer("buyAllBelts","Blazing Vortex Island") end end)
+                    pcall(function()
+                        if ninjaEvent then ninjaEvent:FireServer("buyAllBelts","Blazing Vortex Island") end
+                    end)
                 end
             end)
         end})
@@ -169,7 +180,9 @@ do
             task.spawn(function()
                 while G.AutoBuySkills do
                     task.wait(0.5)
-                    pcall(function() if ninjaEvent then ninjaEvent:FireServer("buyAllSkills","Blazing Vortex Island") end end)
+                    pcall(function()
+                        if ninjaEvent then ninjaEvent:FireServer("buyAllSkills","Blazing Vortex Island") end
+                    end)
                 end
             end)
         end})
@@ -181,7 +194,9 @@ do
             task.spawn(function()
                 while G.AutoBuyShurikens do
                     task.wait(0.5)
-                    pcall(function() if ninjaEvent then ninjaEvent:FireServer("buyAllShurikens","Blazing Vortex Island") end end)
+                    pcall(function()
+                        if ninjaEvent then ninjaEvent:FireServer("buyAllShurikens","Blazing Vortex Island") end
+                    end)
                 end
             end)
         end})
@@ -194,8 +209,8 @@ do
                 while G.AutoFarmChi do
                     task.wait(0.3)
                     pcall(function()
-                        local valley = Workspace:FindFirstChild("spawnedCoins")
-                            and Workspace.spawnedCoins:FindFirstChild("Valley")
+                        local sc = Workspace:FindFirstChild("spawnedCoins")
+                        local valley = sc and sc:FindFirstChild("Valley")
                         local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
                         if valley and hrp then
                             for _, c in ipairs(valley:GetChildren()) do
@@ -219,8 +234,8 @@ do
                 while G.AutoFarmCoin do
                     task.wait(0.3)
                     pcall(function()
-                        local valley = Workspace:FindFirstChild("spawnedCoins")
-                            and Workspace.spawnedCoins:FindFirstChild("Valley")
+                        local sc = Workspace:FindFirstChild("spawnedCoins")
+                        local valley = sc and sc:FindFirstChild("Valley")
                         local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
                         if valley and hrp then
                             for _, c in ipairs(valley:GetChildren()) do
@@ -354,19 +369,19 @@ end
 do
     local S = MiscMenu:AddSection({Position='left', Name="MISC"})
 
-    -- Invisibility
     S:AddToggle({Name="Invisibility", Flag="NL_Invis", Default=false,
         Callback=function(v)
             G.Invisibility = v
             task.spawn(function()
                 while G.Invisibility do
                     task.wait(0.5)
-                    pcall(function() if ninjaEvent then ninjaEvent:FireServer("goInvisible") end end)
+                    pcall(function()
+                        if ninjaEvent then ninjaEvent:FireServer("goInvisible") end
+                    end)
                 end
             end)
         end})
 
-    -- Inf Jump
     S:AddToggle({Name="Inf Jump", Flag="NL_InfJump", Default=false,
         Callback=function(v) G.InfJump = v end})
 
@@ -382,15 +397,18 @@ do
 end
 
 -- =========================================================================
--- [ MENU KEYBIND SETTINGS ]
+-- [ MENU SETTINGS ]
 -- =========================================================================
 do
     local S = MiscMenu:AddSection({Position='right', Name="MENU"})
     S:AddKeybind({Name="Menu Keybind", Flag="NL_MenuKey", Default=Enum.KeyCode.Insert,
         Callback=function(v) if v ~= nil then getgenv().NL_MenuKey = v end end})
     S:AddToggle({Name="Ignore Game Processed", Flag="NL_IGP", Default=false,
-        Callback=function(v) getgenv().NL_IgnoreGP = v end})
+        Callback=function(v) getgenv().NL_IGNORE_GP = v; getgenv().NL_IgnoreGP = v end})
 end
 
+-- =========================================================================
+-- [ DONE ]
+-- =========================================================================
 Notification:Notify({Title="RAINBOW HUB", Content="Ninja Legends loaded", Icon="clipboard"})
-print("[RAINBOW HUB] Ninja Legends loaded")
+print("[RAINBOW HUB] Ninja Legends loaded — " .. #game:GetService("Players"):GetPlayers() .. " players")
