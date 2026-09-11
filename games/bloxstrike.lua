@@ -178,25 +178,37 @@ local Toggles = {}
 local Options = {}
 
 local function mirrorToggle(name, def)
-    Toggles[name] = {Value = def or false, _callbacks = {}}
-    function Toggles[name]:SetValue(v)
+    local t = { Value = def or false, _callbacks = {} }
+    t.SetValue = function(self, v)
         self.Value = v
-        for _,cb in ipairs(self._callbacks) do pcall(cb, v) end
+        for _, cb in ipairs(self._callbacks) do
+            pcall(cb, v)
+        end
     end
-    function Toggles[name]:OnChanged(cb) table.insert(self._callbacks, cb) end
-    return Toggles[name]
+    t.OnChanged = function(self, cb)
+        table.insert(self._callbacks, cb)
+    end
+    Toggles[name] = t
+    return t
 end
 
 local function mirrorOption(name, def)
-    Options[name] = {Value = def, _callbacks = {}}
-    function Options[name]:SetValue(v)
+    local o = { Value = def, _callbacks = {} }
+    o.SetValue = function(self, v)
         self.Value = v
-        for _,cb in ipairs(self._callbacks) do pcall(cb, v) end
+        for _, cb in ipairs(self._callbacks) do
+            pcall(cb, v)
+        end
     end
-    function Options[name]:OnChanged(cb) table.insert(self._callbacks, cb) end
-    function Options[name]:GetState() return self.Value end
-    function Options[name]:SetValues() end
-    return Options[name]
+    o.OnChanged = function(self, cb)
+        table.insert(self._callbacks, cb)
+    end
+    o.GetState = function(self)
+        return self.Value
+    end
+    o.SetValues = function(self) end
+    Options[name] = o
+    return o
 end
 
 -- =========================================================================
