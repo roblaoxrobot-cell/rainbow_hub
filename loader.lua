@@ -1,5 +1,5 @@
 -- =========================================================
---  RAINBOW HUB — Loader (games selector) v1.1
+--  RAINBOW HUB — Loader (games selector) v1.2
 -- =========================================================
 
 local REPO   = "roblaoxrobot-cell/rainbow_hub"
@@ -51,7 +51,7 @@ local Status = {
     UNIVERSAL="In development", RIVALS="Working", FLUXOPVP="Working",
     MM2="Working", SELLLEMONS="Working", PENABLOX="Working",
     EUROPHIUM="Working", SULTANISIMUS="Working", NINJALEGENDS="Working",
-    BLOXSTRIKE="Working",
+    BLOXSTRIKE="Working", ONETAP="Working",
 }
 local function StatusColor(t)
     t = (t or ""):lower()
@@ -128,7 +128,7 @@ CountLbl.BackgroundTransparency = 1
 CountLbl.FontFace, CountLbl.TextSize = FontSB, 10
 CountLbl.TextColor3 = Colors.Muted
 CountLbl.TextXAlignment = Enum.TextXAlignment.Left
-CountLbl.Text = "10 GAMES SUPPORTED"
+CountLbl.Text = "11 GAMES SUPPORTED"
 
 local Search = Instance.new("TextBox", Side)
 Search.Position, Search.Size = UDim2.new(0,6,0,24), UDim2.new(1,-12,0,26)
@@ -329,6 +329,7 @@ AddGame("Europhium HvH",    7743867811, "europhium",     "EUROPHIUM")
 AddGame("Sultanisimus HvH", 6026568198, "sultanisimus",  "SULTANISIMUS")
 AddGame("Ninja Legends",    3392479555, "ninjalegends",  "NINJALEGENDS")
 AddGame("BloxStrike",       2241530674, "bloxstrike",    "BLOXSTRIKE")
+AddGame("One Tap",          5572869042, "onetap",        "ONETAP")
 
 task.spawn(function()
     Main.Size = UDim2.new(0,560,0,0)
@@ -341,4 +342,4 @@ task.spawn(function()
     Content.Visible = true
 end)
 
-print("[RAINBOW HUB] Loader v1.1 ready — 10 games")
+print("[RAINBOW HUB] Loader v1.2 ready — 11 games")
