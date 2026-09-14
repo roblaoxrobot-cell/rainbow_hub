@@ -1,6 +1,6 @@
 -- =========================================================
 --  PENABLOX HVH GAME SCRIPT (games/penablox.lua)
---  Loaded by loader.lua
+--  Loaded by loader.lua | v5.2 | HUB-COMPLETE + WalkSpeed 600
 -- =========================================================
 
 local F = loadstring(game:HttpGet("https://raw.githubusercontent.com/4lpaca-pin/Fatality/refs/heads/main/src/source.luau"))()
@@ -11,6 +11,7 @@ local RunService = game:GetService("RunService")
 local UIS        = game:GetService("UserInputService")
 local Players    = game:GetService("Players")
 local Workspace  = game:GetService("Workspace")
+local Pathfinding = game:GetService("PathfindingService")
 local LocalPlayer = Players.LocalPlayer
 
 local function keyMatches(input, key)
@@ -19,9 +20,6 @@ local function keyMatches(input, key)
     return input.KeyCode.Name == tostring(key)
 end
 
--- =========================================================
---  CHECK FUNCTIONS
--- =========================================================
 local function checkspecificfunction(funcName)
     if getfenv()[funcName] == nil and _G[funcName] == nil then return false end
     return true
@@ -35,9 +33,32 @@ getgenv().RageBotMethod  = getgenv().RageBotMethod or "Event Hook"
 getgenv().RageBotHitPos  = getgenv().RageBotHitPos or "Auto"
 getgenv().RageBotHitPart = getgenv().RageBotHitPart or "Head"
 
+getgenv().FakeLagEnabled   = false
+getgenv().FakeLagStrength  = 200
+getgenv().FakeLagInterval  = 400
+getgenv().ShowLagEnabled   = false
+getgenv().LagColor         = Color3.fromRGB(255, 100, 255)
+getgenv().LagFillAlpha     = 0.5
+getgenv().LagPartAlpha     = 0.4
+
+getgenv().RapidFireEnabled = false
+getgenv().RapidFireCount   = 5
+getgenv().RapidFireDelay   = 0.01
+
+getgenv().WalkbotEnabled   = false
+getgenv().WalkbotBind      = Enum.KeyCode.K
+getgenv().WalkbotSpeed     = 24
+getgenv().WalkbotJump      = true
+getgenv().WalkbotCrouch    = true
+getgenv().WalkbotShowPath  = true
+getgenv().WalkbotPathColor = Color3.fromRGB(0, 220, 80)
+
+getgenv().PlayerWalkSpeed  = 16
+getgenv().PlayerJumpPower  = 50
+
 if getgenv().RageBotHitPos == "Auto" then
-    if game:GetService("Players").LocalPlayer:FindFirstChild("hitparts") then
-        game:GetService("Players").LocalPlayer:FindFirstChild("hitparts").Value = "Legs,Torso,Arms,Head"
+    if LocalPlayer:FindFirstChild("hitparts") then
+        LocalPlayer.hitparts.Value = "Legs,Torso,Arms,Head"
     end
 end
 
@@ -57,11 +78,10 @@ end
 -- =========================================================
 task.spawn(function()
     if not checkspecificfunction("getgc") then
-        Notification:Notify({ Title = "Warning", Content = "getgc is missing, can't disable client checks.", Icon = "bell" })
+        Notification:Notify({ Title = "Warning", Content = "getgc is missing.", Icon = "bell" })
         return
     end
 
-    -- movement protections
     for _, v in pairs(getgc(true)) do
         if type(v) == "table" and rawget(v, "WalkspeedProtect") then
             pcall(function()
@@ -77,7 +97,6 @@ task.spawn(function()
         end
     end
 
-    -- kick radius
     for _, v in pairs(getgc(true)) do
         if type(v) == "table" and rawget(v, "RADIUS_KICK") and rawget(v, "POS_KICK") then
             pcall(function()
@@ -92,7 +111,6 @@ task.spawn(function()
         end
     end
 
-    -- hook kick functions
     for _, v in pairs(getgc(true)) do
         if type(v) == "function" and getfenv(v).script == nil then
             local name = debug.info(v, "n")
@@ -112,15 +130,12 @@ end)
 --  DISABLE DEFAULT RAGEBOT
 -- =========================================================
 local function disabledefaultragebot()
-    if not checkspecificfunction("getconnections") then
-        warn("[penablox] getconnections is missing, can't disable default ragebot.")
-        return
-    end
+    if not checkspecificfunction("getconnections") then return end
     if LocalPlayer:FindFirstChild("Mindmg") then
         LocalPlayer.Mindmg.Value = 1
     end
     local bob = workspace:FindFirstChild("Bob")
-    if not bob then warn("[penablox] I didn't find bob") return end
+    if not bob then return end
     for _, conn in pairs(getconnections(bob.ChildAdded)) do
         pcall(function() conn:Disconnect() end)
     end
@@ -130,63 +145,28 @@ local function disabledefaultragebot()
 end
 
 -- =========================================================
---  ANTI-AIM (yaw hook + AAHandler loop)
+--  PLAYER WALKSPEED LOOP
 -- =========================================================
 task.spawn(function()
-    local function hookyaw()
-        local plr = LocalPlayer
-        local chr = plr.Character or plr.CharacterAdded:Wait()
-        local Root = chr:WaitForChild("HumanoidRootPart")
-        local oldNewIndex
-        oldNewIndex = hookmetamethod(game, "__newindex", function(self, key, value)
-            if not checkcaller() and self == Root and key == "CFrame" and getgenv().AntiAimEnabled then
-                local rot = getgenv().BaseYawantiaim or 0
-                value = value * CFrame.Angles(0, math.rad(rot), 0)
-            end
-            return oldNewIndex(self, key, value)
-        end)
-    end
-    local s_hook, e_hook = pcall(hookyaw)
-    if not s_hook then warn("[penablox] Failed to hook yaw: " .. tostring(e_hook)) end
-
-    if not checkspecificfunction("require") then
-        Notification:Notify({ Title = "Warning", Content = "require is missing, can't start anti-aim.", Icon = "bell" })
-        return
-    end
-    if not checkspecificfunction("hookmetamethod") then
-        Notification:Notify({ Title = "Warning", Content = "hookmetamethod is missing, some anti-aim features might not work.", Icon = "bell" })
-    end
-
-    if getgenv().AAIsLooped then return end
-    local AAHandler = require(game:GetService("ReplicatedFirst"):WaitForChild("AAHandler"))
-    getgenv().AAIsLooped = true
-
     while task.wait(0.1) do
-        if not AAHandler then warn("[penablox] AAHandler is missing.") return end
-        if getgenv().AntiAimEnabled then
-            local ok, err = pcall(function()
-                AAHandler.SendYawJitter(
-                    nil,
-                    getgenv().typeofantiaim or "Static",
-                    getgenv().BaseYawantiaim or 0,
-                    getgenv().leftantiaim or 0,
-                    getgenv().rightantiaim or 0,
-                    getgenv().antiaimjitter or 0,
-                    getgenv().antiaimdelayness or 0,
-                    getgenv().antiaimrandomness or 0
-                )
-                AAHandler.SendBodyYaw(nil, getgenv().BodyYawantiaim or 0)
-                AAHandler.SendPitchMode(nil, "Static", getgenv().Pitchantiaim or 0, 0, 0, 0, 0, 0)
-            end)
-            if not ok then
-                Notification:Notify({ Title = "Warning", Content = "Failed to send anti-aim data, error: " .. tostring(err), Icon = "bell" })
+        pcall(function()
+            if getgenv().WalkbotEnabled then return end
+            local char = LocalPlayer.Character
+            if not char then return end
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if not hum then return end
+            if hum.WalkSpeed ~= getgenv().PlayerWalkSpeed then
+                hum.WalkSpeed = getgenv().PlayerWalkSpeed
             end
-        end
+            if hum.UseJumpPower and hum.JumpPower ~= getgenv().PlayerJumpPower then
+                hum.JumpPower = getgenv().PlayerJumpPower
+            end
+        end)
     end
 end)
 
 -- =========================================================
---  HELPERS — closest player, encrypt/decrypt, hitpart finder
+--  HELPERS
 -- =========================================================
 local function GetClosestPlayer()
     local nearestPlayer, nearestDistance = nil, math.huge
@@ -250,166 +230,767 @@ local function GetPartNameAtPos(targetPos)
 end
 
 -- =========================================================
---  CUSTOM RESOLVER — Divine.lua OLD (credit: hush)
+--  FAKE LAG + GHOST
 -- =========================================================
-task.spawn(function()
-    Notification:Notify({
-        Title = "Rainbow Hub",
-        Content = 'Credits to hush for the "Divine.lua OLD" resolver.',
-        Duration = 10,
-        Icon = "bell",
-    })
+local fakeLagT = {
+    active = false,
+    serverCF = nil,
+    thread = nil,
+    ghostModel = nil,
+    ghostHL = nil,
+}
 
-    local cloneref = cloneref or function(obj) return obj end
-    local WS         = cloneref(game:GetService("Workspace"))
-    local RS         = cloneref(game:GetService("RunService"))
-    local PlayersSvc = cloneref(Players)
-    local LP         = PlayersSvc.LocalPlayer
+local function lagOn()
+    pcall(function()
+        if setfflag then
+            setfflag("DebugSimulatePacketLoss", "1")
+            setfflag("DebugSimulatePacketLossPercent", "100")
+            setfflag("DebugSimulateIncomingPacketLoss", "1")
+            setfflag("DebugSimulateIncomingPacketLossPercent", "100")
+        end
+    end)
+end
 
-    local HIT_WINDOW  = 0.25
-    local STACK_LIMIT = 10
-    local FLUSH_TIME  = 2
+local function lagOff()
+    pcall(function()
+        if setfflag then
+            setfflag("DebugSimulatePacketLoss", "0")
+            setfflag("DebugSimulatePacketLossPercent", "0")
+            setfflag("DebugSimulateIncomingPacketLoss", "0")
+            setfflag("DebugSimulateIncomingPacketLossPercent", "0")
+        end
+    end)
+end
 
-    local yawSamples, resolvedYaw, lockedYaw = {}, {}, {}
-    local lastHitTime, lastFlush = 0, os.clock()
-    local missCounter, lastMissed = {}, {}
+local function destroyGhost()
+    if fakeLagT.ghostModel then pcall(function() fakeLagT.ghostModel:Destroy() end) end
+    if fakeLagT.ghostHL then pcall(function() fakeLagT.ghostHL:Destroy() end) end
+    fakeLagT.ghostModel = nil
+    fakeLagT.ghostHL = nil
+end
 
-    local function norm(a) return math.atan2(math.sin(a), math.cos(a)) end
-    local function diff(a, b) return math.abs(norm(a - b)) end
-    local function lerpAngle(a, b, t) return a + norm(b - a) * t end
+local function createGhost()
+    local char = LocalPlayer.Character
+    if not char then return false end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
 
-    local function flushthis()
-        table.clear(yawSamples); table.clear(resolvedYaw); table.clear(lockedYaw)
-        lastFlush = os.clock()
+    destroyGhost()
+
+    local model = Instance.new("Model")
+    model.Name = "RH_FakeLagGhost"
+
+    local count = 0
+    for _, part in ipairs(char:GetChildren()) do
+        if part:IsA("BasePart") then
+            local p = Instance.new("Part")
+            p.Name = part.Name
+            p.Size = part.Size
+            p.CFrame = part.CFrame
+            p.Anchored = true
+            p.CanCollide = false
+            p.CanQuery = false
+            p.CanTouch = false
+            p.CastShadow = false
+            p.Massless = true
+            p.Transparency = getgenv().LagPartAlpha or 0.4
+            p.Material = Enum.Material.ForceField
+            p.Color = getgenv().LagColor or Color3.fromRGB(255,100,255)
+            p.Reflectance = 0
+            p.Parent = model
+            count = count + 1
+        end
     end
 
-    local function getClosest()
-        local myRoot = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-        if not myRoot then return nil end
-        local best, bestDist = nil, math.huge
-        for _, plr in ipairs(PlayersSvc:GetPlayers()) do
-            if plr ~= LP and plr.Character then
-                local hrp = plr.Character:FindFirstChild("HumanoidRootPart")
-                local hum = plr.Character:FindFirstChildOfClass("Humanoid")
-                if hrp and hum and hum.Health > 0 then
-                    local dist = (hrp.Position - myRoot.Position).Magnitude
-                    if dist < bestDist then best = plr; bestDist = dist end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.Parent ~= char then
+            local ancestor = part.Parent
+            local isAccessory = false
+            while ancestor and ancestor ~= char do
+                if ancestor:IsA("Accessory") or ancestor:IsA("Tool") then
+                    isAccessory = true
+                    break
                 end
+                ancestor = ancestor.Parent
+            end
+            if not isAccessory and not model:FindFirstChild(part.Name) then
+                local p = Instance.new("Part")
+                p.Name = part.Name
+                p.Size = part.Size
+                p.CFrame = part.CFrame
+                p.Anchored = true
+                p.CanCollide = false
+                p.CanQuery = false
+                p.CanTouch = false
+                p.CastShadow = false
+                p.Massless = true
+                p.Transparency = getgenv().LagPartAlpha or 0.4
+                p.Material = Enum.Material.ForceField
+                p.Color = getgenv().LagColor or Color3.fromRGB(255,100,255)
+                p.Parent = model
+                count = count + 1
             end
         end
-        return best
     end
 
-    local function getHRPYaw(hrp)
-        local look = hrp.CFrame.LookVector
-        return math.atan2(look.X, look.Z)
-    end
+    model.Parent = workspace
 
-    local function pushYaw(plr)
-        local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        yawSamples[plr] = yawSamples[plr] or {}
-        table.insert(yawSamples[plr], getHRPYaw(hrp))
-        if #yawSamples[plr] > STACK_LIMIT then table.remove(yawSamples[plr], 1) end
-    end
+    fakeLagT.ghostHL = Instance.new("Highlight")
+    fakeLagT.ghostHL.Name = "RH_FakeLagGhostHL"
+    fakeLagT.ghostHL.FillColor = getgenv().LagColor or Color3.fromRGB(255,100,255)
+    fakeLagT.ghostHL.FillTransparency = getgenv().LagFillAlpha or 0.5
+    fakeLagT.ghostHL.OutlineColor = getgenv().LagColor or Color3.fromRGB(255,100,255)
+    fakeLagT.ghostHL.OutlineTransparency = 0
+    fakeLagT.ghostHL.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    fakeLagT.ghostHL.Adornee = model
+    fakeLagT.ghostHL.Parent = model
 
-    local function classifyAA(plr)
-        local pile = yawSamples[plr]
-        if not pile or #pile < STACK_LIMIT then return "LEGIT" end
-        local totalDelta, flips = 0, 0
-        for i = 2, #pile do
-            local d = diff(pile[i], pile[i - 1])
-            totalDelta += d
-            if math.sign(math.sin(pile[i])) ~= math.sign(math.sin(pile[i - 1])) then flips += 1 end
-        end
-        local avg = totalDelta / (#pile - 1)
-        if avg < math.rad(4) then return "LEGIT"
-        elseif avg < math.rad(18) and flips < 3 then return "STATIC_AA"
-        else return "JITTER_AA" end
-    end
+    fakeLagT.ghostModel = model
+    return count > 0
+end
 
-    do
-        local oldPrint = print
-        print = function(...)
-            for _, v in ipairs({...}) do
-                if tostring(v):find("Missed due to desync") then
-                    local unlucky = getClosest()
-                    if unlucky then
-                        missCounter[unlucky] = (missCounter[unlucky] or 0) + 1
-                        lockedYaw[unlucky]  = nil
-                        resolvedYaw[unlucky] = nil
-                        lastMissed[unlucky]  = true
-                    end
-                end
+local function updateGhost()
+    if not fakeLagT.ghostModel then return end
+    local char = LocalPlayer.Character
+    if not char then destroyGhost() return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then destroyGhost() return end
+
+    local serverCF = fakeLagT.serverCF
+    if not serverCF then serverCF = hrp.CFrame end
+
+    local offset = serverCF * hrp.CFrame:Inverse()
+
+    for _, part in ipairs(fakeLagT.ghostModel:GetChildren()) do
+        if part:IsA("BasePart") then
+            local real = char:FindFirstChild(part.Name)
+            if real and real:IsA("BasePart") then
+                part.Size = real.Size
+                part.CFrame = offset * real.CFrame
+                part.Color = getgenv().LagColor or Color3.fromRGB(255,100,255)
+            else
+                part:Destroy()
             end
-            oldPrint(...)
         end
     end
 
-    local function resolveYaw(plr)
-        local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
-        if not hrp then return 0 end
-        local realYaw = getHRPYaw(hrp)
-        local mode = classifyAA(plr)
-        if mode == "LEGIT" then return realYaw end
-        if mode == "STATIC_AA" then
-            if not lockedYaw[plr] and os.clock() - lastHitTime <= HIT_WINDOW then
-                lockedYaw[plr] = realYaw
-                lastHitTime = 0
-            end
-            return lockedYaw[plr] or realYaw
+    for _, part in ipairs(char:GetChildren()) do
+        if part:IsA("BasePart") and not fakeLagT.ghostModel:FindFirstChild(part.Name) then
+            local p = Instance.new("Part")
+            p.Name = part.Name
+            p.Size = part.Size
+            p.CFrame = offset * part.CFrame
+            p.Anchored = true
+            p.CanCollide = false
+            p.CanQuery = false
+            p.CanTouch = false
+            p.CastShadow = false
+            p.Massless = true
+            p.Transparency = getgenv().LagPartAlpha or 0.4
+            p.Material = Enum.Material.ForceField
+            p.Color = getgenv().LagColor or Color3.fromRGB(255,100,255)
+            p.Parent = fakeLagT.ghostModel
         end
-        local side = math.sign(math.sin(realYaw))
-        if lastMissed[plr] then side = -side; lastMissed[plr] = nil end
-        local biased = norm(realYaw + side * getgenv().DivineLuaBIASAngle)
-        if getgenv().DivineLuaLERPEnabled then
-            local last = resolvedYaw[plr] or biased
-            resolvedYaw[plr] = lerpAngle(last, biased, getgenv().DivineLuaLERPSpeed)
-            return resolvedYaw[plr]
-        end
-        return biased
     end
+end
 
-    local function applyYaw(plr, yaw)
-        local char = plr.Character
-        if not char then return end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        local rj = hrp:FindFirstChild("RootJoint")
-        if not rj then return end
-        if not rj:GetAttribute("BaseC0") then rj:SetAttribute("BaseC0", rj.C0) end
-        rj.C0 = rj:GetAttribute("BaseC0") * CFrame.Angles(0, yaw, 0)
+local function stopFakeLag()
+    if fakeLagT.thread then
+        pcall(function() task.cancel(fakeLagT.thread) end)
+        fakeLagT.thread = nil
     end
+    lagOff()
+    fakeLagT.active = false
+    fakeLagT.serverCF = nil
+end
 
-    RS.Heartbeat:Connect(function()
-        if not getgenv().CustomResolverEnabled or getgenv().CustomResolverMode ~= "Divine.lua OLD" then return end
-        if not getgenv().DivineLuaCorrection then return end
-        if os.clock() - lastFlush > FLUSH_TIME then flushthis() end
-        local tgt = getClosest()
-        if tgt then
-            pushYaw(tgt)
-            local yaw = resolveYaw(tgt)
-            applyYaw(tgt, yaw)
+local function startFakeLag()
+    stopFakeLag()
+    if not getgenv().FakeLagEnabled then return end
+    fakeLagT.active = true
+    fakeLagT.thread = task.spawn(function()
+        while getgenv().FakeLagEnabled do
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then task.wait(0.1); continue end
+            fakeLagT.serverCF = hrp.CFrame
+            lagOn()
+            task.wait(getgenv().FakeLagStrength / 1000)
+            lagOff()
+            task.wait(getgenv().FakeLagInterval / 1000)
         end
+    end)
+end
+
+RunService.RenderStepped:Connect(function()
+    pcall(function()
+        if not (getgenv().ShowLagEnabled and getgenv().FakeLagEnabled) then
+            destroyGhost()
+            return
+        end
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then destroyGhost() return end
+        if not fakeLagT.ghostModel or not fakeLagT.ghostModel.Parent then
+            createGhost()
+        end
+        updateGhost()
     end)
 end)
 
 -- =========================================================
---  FORCE HIT — event hook
+--  RAPID FIRE
+-- =========================================================
+local rapidFireT = {active = false, thread = nil}
+
+local function startRapidFire()
+    if rapidFireT.thread then
+        pcall(function() task.cancel(rapidFireT.thread) end)
+        rapidFireT.thread = nil
+    end
+    if not getgenv().RapidFireEnabled then return end
+    rapidFireT.active = true
+    rapidFireT.thread = task.spawn(function()
+        while getgenv().RapidFireEnabled do task.wait(0.1) end
+    end)
+end
+
+local function stopRapidFire()
+    if rapidFireT.thread then
+        pcall(function() task.cancel(rapidFireT.thread) end)
+        rapidFireT.thread = nil
+    end
+    rapidFireT.active = false
+end
+
+-- =========================================================
+--  ANTI-AIM
+-- =========================================================
+task.spawn(function()
+    local function hookyaw()
+        local plr = LocalPlayer
+        local chr = plr.Character or plr.CharacterAdded:Wait()
+        local Root = chr:WaitForChild("HumanoidRootPart")
+        local oldNewIndex
+        oldNewIndex = hookmetamethod(game, "__newindex", function(self, key, value)
+            if not checkcaller() and self == Root and key == "CFrame" and getgenv().AntiAimEnabled then
+                local rot = getgenv().BaseYawantiaim or 0
+                value = value * CFrame.Angles(0, math.rad(rot), 0)
+            end
+            return oldNewIndex(self, key, value)
+        end)
+    end
+    local s_hook, e_hook = pcall(hookyaw)
+    if not s_hook then warn("[penablox] Failed to hook yaw: " .. tostring(e_hook)) end
+
+    if not checkspecificfunction("require") then return end
+    if getgenv().AAIsLooped then return end
+    local AAHandler = require(game:GetService("ReplicatedFirst"):WaitForChild("AAHandler"))
+    getgenv().AAIsLooped = true
+
+    local unhit = {
+        nextFlip = 0, currentType = "Jitter", currentYaw = 0, currentJitter = 120,
+        currentDelay = 0.003, currentRandom = 0.9, currentBody = 0,
+        currentPitchType = "Jitter", currentPitch = 0, paused = false, pauseUntil = 0,
+    }
+    local AA_TYPES = {"Static", "Jitter", "Offset", "Center", "3-Way", "5-Way", "Rainbow"}
+
+    while task.wait(0.02) do
+        if not AAHandler then return end
+        if getgenv().AntiAimEnabled then
+            local mode = getgenv().typeofantiaim or "Static"
+            if mode == "Unhit" then
+                local now = tick()
+                if now >= unhit.nextFlip then
+                    unhit.nextFlip = now + (math.random(30, 150) / 1000)
+                    unhit.currentType = AA_TYPES[math.random(1, #AA_TYPES)]
+                    unhit.currentYaw = math.random(-180, 180)
+                    unhit.currentJitter = math.random(60, 180)
+                    unhit.currentDelay = math.random(1, 8) / 1000
+                    unhit.currentRandom = math.random(40, 100) / 100
+                    unhit.currentBody = math.random(-80, 80)
+                    unhit.currentPitchType = AA_TYPES[math.random(1, #AA_TYPES)]
+                    unhit.currentPitch = math.random(-45, 45)
+                    if math.random(1, 100) <= 15 then
+                        unhit.paused = true
+                        unhit.pauseUntil = now + (math.random(100, 300) / 1000)
+                    end
+                end
+                if unhit.paused then
+                    if now >= unhit.pauseUntil then
+                        unhit.paused = false
+                    else
+                        pcall(function()
+                            AAHandler.SendYawJitter(nil, "Static", 0, 0, 0, 0, 0, 0)
+                            AAHandler.SendBodyYaw(nil, 0)
+                            AAHandler.SendPitchMode(nil, "Static", 0, 0, 0, 0, 0, 0)
+                        end)
+                        continue
+                    end
+                end
+                pcall(function()
+                    AAHandler.SendYawJitter(nil, unhit.currentType, unhit.currentYaw, math.random(-180, 0), math.random(0, 180), unhit.currentJitter, unhit.currentDelay, unhit.currentRandom)
+                    AAHandler.SendBodyYaw(nil, unhit.currentBody)
+                    AAHandler.SendPitchMode(nil, unhit.currentPitchType, unhit.currentPitch, math.random(-45, 45), math.random(-45, 45), math.random(60, 180), math.random(1, 8) / 1000, math.random(40, 100) / 100)
+                end)
+            else
+                pcall(function()
+                    AAHandler.SendYawJitter(nil, mode, getgenv().BaseYawantiaim or 0, getgenv().leftantiaim or 0, getgenv().rightantiaim or 0, getgenv().antiaimjitter or 0, getgenv().antiaimdelayness or 0, getgenv().antiaimrandomness or 0)
+                    AAHandler.SendBodyYaw(nil, getgenv().BodyYawantiaim or 0)
+                    AAHandler.SendPitchMode(nil, "Static", getgenv().Pitchantiaim or 0, 0, 0, 0, 0, 0)
+                end)
+            end
+        end
+    end
+end)
+
+-- =========================================================
+--  HUB RESOLVER
+-- =========================================================
+local HUB = {
+    Enabled = true, Strength = 1.2, FovLimit = 25, ShowCham = false,
+    ChamColor = Color3.fromRGB(255, 200, 0),
+    samples = {}, lastYaw = {}, aaType = {}, side = {},
+    chamParts = {}, chamHL = {},
+}
+
+local function normAngle(a) return math.atan2(math.sin(a), math.cos(a)) end
+local function angleDiff(a, b) return math.abs(normAngle(a - b)) end
+local function getHRPYaw(hrp)
+    local look = hrp.CFrame.LookVector
+    return math.atan2(look.X, look.Z)
+end
+
+task.spawn(function()
+    while task.wait(0.02) do
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local curYaw = getHRPYaw(hrp)
+                    HUB.samples[plr] = HUB.samples[plr] or {}
+                    table.insert(HUB.samples[plr], curYaw)
+                    if #HUB.samples[plr] > 30 then table.remove(HUB.samples[plr], 1) end
+                    HUB.lastYaw[plr] = curYaw
+                end
+            end
+        end
+    end
+end)
+
+local function classifyAA(plr)
+    local s = HUB.samples[plr]
+    if not s or #s < 6 then return "legit" end
+    local total, flips = 0, 0
+    for i = 2, #s do
+        local d = angleDiff(s[i], s[i-1])
+        total = total + d
+        if math.sign(math.sin(s[i])) ~= math.sign(math.sin(s[i-1])) then flips = flips + 1 end
+    end
+    local avg = total / (#s - 1)
+    if avg < math.rad(3) then return "legit" end
+    if flips >= 2 then return "jitter" end
+    if avg > math.rad(40) then return "spin" end
+    return "static"
+end
+
+task.spawn(function()
+    while task.wait(0.1) do
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                HUB.aaType[plr] = classifyAA(plr)
+            end
+        end
+    end
+end)
+
+local function hubResolve(plr)
+    local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return 0, "legit" end
+    local type_ = HUB.aaType[plr] or "legit"
+    if type_ == "legit" then return 0, "legit" end
+
+    local correction = 0
+    if type_ == "static" then
+        correction = math.pi * 0.5
+    elseif type_ == "jitter" then
+        local s = HUB.side[plr] or 1
+        HUB.side[plr] = -s
+        correction = math.rad(90) * s
+    elseif type_ == "spin" then
+        local curYaw = getHRPYaw(hrp)
+        local prevYaw = HUB.samples[plr][#HUB.samples[plr] - 1] or curYaw
+        local delta = normAngle(curYaw - prevYaw)
+        correction = delta * 3
+    end
+
+    local maxRad = math.rad(HUB.FovLimit)
+    correction = math.clamp(correction, -maxRad, maxRad)
+    return correction * HUB.Strength, type_
+end
+
+function ResolvePosition(plr, part)
+    if not HUB.Enabled then return part.Position, nil end
+    local hrp = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return part.Position, nil end
+    local correction, type_ = hubResolve(plr)
+    if correction == 0 then return part.Position, type_ end
+    local rel = hrp.CFrame:ToObjectSpace(part.CFrame)
+    local rotated = hrp.CFrame * CFrame.Angles(0, correction, 0) * rel
+    return rotated.Position, type_
+end
+
+local function removeCham(plr)
+    if HUB.chamParts[plr] then pcall(function() HUB.chamParts[plr]:Destroy() end); HUB.chamParts[plr] = nil end
+    if HUB.chamHL[plr] then pcall(function() HUB.chamHL[plr]:Destroy() end); HUB.chamHL[plr] = nil end
+end
+
+local function makeCham(plr)
+    if HUB.chamParts[plr] then return end
+    local p = Instance.new("Part")
+    p.Name = "RH_HUBCham"
+    p.Size = Vector3.new(2.5, 5, 2.5)
+    p.Anchored = true
+    p.CanCollide = false; p.CanQuery = false; p.CanTouch = false; p.CastShadow = false
+    p.Material = Enum.Material.Neon
+    p.Color = HUB.ChamColor
+    p.Transparency = 0.55
+    p.Parent = workspace
+    local hl = Instance.new("Highlight")
+    hl.FillColor = HUB.ChamColor
+    hl.FillTransparency = 0.7
+    hl.OutlineColor = HUB.ChamColor
+    hl.OutlineTransparency = 0
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    hl.Adornee = p
+    hl.Parent = p
+    HUB.chamParts[plr] = p
+    HUB.chamHL[plr] = hl
+end
+
+RunService.RenderStepped:Connect(function()
+    pcall(function()
+        if not HUB.ShowCham then
+            for plr in pairs(HUB.chamParts) do removeCham(plr) end
+            return
+        end
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                local char = plr.Character
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local type_ = HUB.aaType[plr] or "legit"
+                if char and hum and hum.Health > 0 and hrp and type_ ~= "legit" then
+                    makeCham(plr)
+                    local correction = hubResolve(plr)
+                    local part = HUB.chamParts[plr]
+                    if part then
+                        part.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, correction, 0)
+                        part.Color = HUB.ChamColor
+                        HUB.chamHL[plr].FillColor = HUB.ChamColor
+                        HUB.chamHL[plr].OutlineColor = HUB.ChamColor
+                    end
+                else
+                    removeCham(plr)
+                end
+            end
+        end
+    end)
+end)
+
+Players.PlayerRemoving:Connect(function(plr)
+    removeCham(plr)
+    HUB.samples[plr] = nil
+    HUB.lastYaw[plr] = nil
+    HUB.aaType[plr] = nil
+    HUB.side[plr] = nil
+end)
+
+-- =========================================================
+--  WALKBOT
+-- =========================================================
+local Walkbot = {
+    path = nil, waypoints = {}, wpIndex = 1, lastRepath = 0,
+    target = nil, lastTargetPos = nil, pathParts = {},
+    lastPos = nil, stuckTime = 0, defaultHipHeight = 2,
+}
+
+local function wbGetRoot(char) if not char then return nil end; return char:FindFirstChild("HumanoidRootPart") end
+local function wbGetHumanoid(char) if not char then return nil end; return char:FindFirstChildOfClass("Humanoid") end
+local function wbGetTeam(p) if not p then return nil end; if p.Team then return p.Team.Name end; return nil end
+local function wbIsEnemy(p)
+    if not p or p == LocalPlayer then return false end
+    local a, b = wbGetTeam(LocalPlayer), wbGetTeam(p)
+    if a and b then return a ~= b end
+    return true
+end
+
+local function wbFindTarget()
+    local myRoot = wbGetRoot(LocalPlayer.Character)
+    if not myRoot then return nil end
+    local best, bestDist = nil, 800
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and wbIsEnemy(plr) then
+            local root = wbGetRoot(plr.Character)
+            local hum = wbGetHumanoid(plr.Character)
+            if root and hum and hum.Health > 0 then
+                local d = (root.Position - myRoot.Position).Magnitude
+                if d < bestDist then bestDist = d; best = plr end
+            end
+        end
+    end
+    return best
+end
+
+local function wbClearPathVisual()
+    for _, p in ipairs(Walkbot.pathParts) do pcall(function() p:Destroy() end) end
+    Walkbot.pathParts = {}
+end
+
+local function wbComputePath(targetChar)
+    local myRoot = wbGetRoot(LocalPlayer.Character)
+    local targetRoot = wbGetRoot(targetChar)
+    if not myRoot or not targetRoot then return false end
+    local path = Pathfinding:CreatePath({
+        AgentRadius = 2, AgentHeight = 5,
+        AgentCanJump = true, AgentCanClimb = false,
+        WaypointSpacing = 12,
+    })
+    local ok = pcall(function() path:ComputeAsync(myRoot.Position, targetRoot.Position) end)
+    if not ok or path.Status ~= Enum.PathStatus.Success then return false end
+    local rawWps = path:GetWaypoints()
+    local filtered = {}
+    for i = 1, #rawWps, 2 do table.insert(filtered, rawWps[i]) end
+    if #rawWps > 0 and filtered[#filtered] ~= rawWps[#rawWps] then
+        table.insert(filtered, rawWps[#rawWps])
+    end
+    Walkbot.path = path
+    Walkbot.waypoints = filtered
+    Walkbot.wpIndex = 1
+    Walkbot.lastTargetPos = targetRoot.Position
+    return true
+end
+
+local function wbDrawPath()
+    if not getgenv().WalkbotShowPath or #Walkbot.waypoints < 2 then
+        wbClearPathVisual(); return
+    end
+    local needed = #Walkbot.waypoints - 1
+    for i = needed + 1, #Walkbot.pathParts do
+        if Walkbot.pathParts[i] then pcall(function() Walkbot.pathParts[i]:Destroy() end); Walkbot.pathParts[i] = nil end
+    end
+    for i = 1, needed do
+        local a = Walkbot.waypoints[i].Position
+        local b = Walkbot.waypoints[i + 1].Position
+        local mid = (a + b) / 2
+        local dir = b - a
+        local len = dir.Magnitude
+        if len >= 0.01 then
+            local part = Walkbot.pathParts[i]
+            if not part or not part.Parent then
+                part = Instance.new("Part")
+                part.Name = "RH_WalkPath"
+                part.Anchored = true
+                part.CanCollide = false; part.CanQuery = false; part.CanTouch = false; part.CastShadow = false
+                part.Material = Enum.Material.SmoothPlastic
+                part.Reflectance = 0
+                part.Parent = workspace
+                Walkbot.pathParts[i] = part
+            end
+            part.Size = Vector3.new(0.12, 0.12, len)
+            part.CFrame = CFrame.new(mid, b)
+            part.Color = getgenv().WalkbotPathColor
+            part.Transparency = 0
+        end
+    end
+end
+
+local function wbApplyVelocity(myRoot, dir, speed)
+    if dir.Magnitude < 0.01 then return end
+    local md = dir.Unit
+    local cv = myRoot.AssemblyLinearVelocity
+    local tx, tz = md.X * speed, md.Z * speed
+    local s = 0.25
+    local nx = cv.X + (tx - cv.X) * s
+    local nz = cv.Z + (tz - cv.Z) * s
+    local hs = math.sqrt(nx*nx + nz*nz)
+    if hs > speed then nx = (nx/hs)*speed; nz = (nz/hs)*speed end
+    pcall(function() myRoot.AssemblyLinearVelocity = Vector3.new(nx, cv.Y, nz) end)
+end
+
+local function wbStopVelocity(myRoot)
+    if not myRoot then return end
+    local v = myRoot.AssemblyLinearVelocity
+    pcall(function() myRoot.AssemblyLinearVelocity = Vector3.new(0, v.Y, 0) end)
+end
+
+local wbJumpParams = RaycastParams.new()
+wbJumpParams.FilterType = Enum.RaycastFilterType.Exclude
+local function wbObstacleAhead(myRoot, myChar)
+    wbJumpParams.FilterDescendantsInstances = {myChar}
+    local origin = myRoot.Position + Vector3.new(0, -1, 0)
+    return workspace:Raycast(origin, myRoot.CFrame.LookVector * 3, wbJumpParams) ~= nil
+end
+
+local wbCrouchParams = RaycastParams.new()
+wbCrouchParams.FilterType = Enum.RaycastFilterType.Exclude
+local function wbCeilingAbove(myRoot, myChar)
+    wbCrouchParams.FilterDescendantsInstances = {myChar}
+    local origin = myRoot.Position + Vector3.new(0, 3, 0)
+    return workspace:Raycast(origin, Vector3.new(0, 3, 0), wbCrouchParams) ~= nil
+end
+
+local function wbApplyCrouch(hum, crouching)
+    if not hum then return end
+    if hum.RigType == Enum.HumanoidRigType.R15 then
+        if crouching then hum.HipHeight = 1.2
+        else if hum.HipHeight ~= Walkbot.defaultHipHeight then hum.HipHeight = Walkbot.defaultHipHeight end end
+    end
+end
+
+local function wbIsStuck(myRoot)
+    local now = tick()
+    if not Walkbot.lastPos then Walkbot.lastPos = myRoot.Position; Walkbot.stuckTime = now; return false end
+    local moved = (myRoot.Position - Walkbot.lastPos).Magnitude
+    if moved < 0.3 then
+        if now - Walkbot.stuckTime > 0.5 then
+            Walkbot.stuckTime = now; Walkbot.lastPos = myRoot.Position; return true
+        end
+        return false
+    else
+        Walkbot.stuckTime = now; Walkbot.lastPos = myRoot.Position; return false
+    end
+end
+
+task.spawn(function()
+    while task.wait(0.05) do
+        pcall(function()
+            if not getgenv().WalkbotEnabled then wbClearPathVisual(); return end
+
+            local myChar = LocalPlayer.Character
+            local myRoot = wbGetRoot(myChar)
+            local myHum = wbGetHumanoid(myChar)
+            if not myRoot or not myHum then wbClearPathVisual(); return end
+
+            myHum.WalkSpeed = getgenv().WalkbotSpeed
+            if myHum.UseJumpPower and myHum.JumpPower ~= 50 then myHum.JumpPower = 50 end
+
+            local target = wbFindTarget()
+            if not target then
+                Walkbot.target = nil; Walkbot.path = nil; Walkbot.waypoints = {}
+                wbClearPathVisual(); wbStopVelocity(myRoot); return
+            end
+
+            local targetRoot = wbGetRoot(target.Character)
+            if not targetRoot then wbClearPathVisual(); wbStopVelocity(myRoot); return end
+
+            local dist = (targetRoot.Position - myRoot.Position).Magnitude
+            if dist < 4 then wbClearPathVisual(); wbStopVelocity(myRoot); return end
+
+            if getgenv().WalkbotCrouch then
+                wbApplyCrouch(myHum, wbCeilingAbove(myRoot, myChar))
+            end
+
+            local now = tick()
+            local targetMoved = Walkbot.lastTargetPos and (targetRoot.Position - Walkbot.lastTargetPos).Magnitude > 12
+            local targetChanged = Walkbot.target ~= target
+            local needRepath = not Walkbot.path or targetChanged or targetMoved
+                or (now - Walkbot.lastRepath > 3.0 and Walkbot.wpIndex > #Walkbot.waypoints)
+
+            if needRepath then
+                Walkbot.target = target
+                Walkbot.lastRepath = now
+                wbComputePath(target.Character)
+            end
+
+            local moveDir = nil
+            local speed = getgenv().WalkbotSpeed
+
+            if #Walkbot.waypoints > 0 and Walkbot.wpIndex <= #Walkbot.waypoints then
+                local targetIdx = Walkbot.wpIndex
+                local curWp = Walkbot.waypoints[Walkbot.wpIndex]
+                if curWp then
+                    local curDist = (curWp.Position - myRoot.Position).Magnitude
+                    if curDist < 6 and Walkbot.wpIndex < #Walkbot.waypoints then
+                        targetIdx = Walkbot.wpIndex + 1
+                    end
+                end
+                local aimWp = Walkbot.waypoints[targetIdx]
+                if aimWp then
+                    local d = aimWp.Position - myRoot.Position
+                    moveDir = Vector3.new(d.X, 0, d.Z)
+                    if aimWp.Action == Enum.PathWaypointAction.Jump and d.Magnitude < 6 then myHum.Jump = true end
+                end
+                if curWp and (curWp.Position - myRoot.Position).Magnitude < 4 then
+                    if curWp.Action == Enum.PathWaypointAction.Jump then myHum.Jump = true end
+                    Walkbot.wpIndex = Walkbot.wpIndex + 1
+                end
+            end
+
+            if not moveDir and dist < 150 then
+                local d = targetRoot.Position - myRoot.Position
+                moveDir = Vector3.new(d.X, 0, d.Z)
+            end
+
+            if moveDir then wbApplyVelocity(myRoot, moveDir, speed) else wbStopVelocity(myRoot) end
+
+            if getgenv().WalkbotJump then
+                if wbIsStuck(myRoot) then myHum.Jump = true end
+                if wbObstacleAhead(myRoot, myChar) then
+                    local v = myRoot.AssemblyLinearVelocity
+                    local hs = math.sqrt(v.X*v.X + v.Z*v.Z)
+                    if hs < speed * 0.5 then myHum.Jump = true end
+                end
+            end
+
+            wbDrawPath()
+        end)
+    end
+end)
+
+UIS.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == getgenv().WalkbotBind then
+        getgenv().WalkbotEnabled = not getgenv().WalkbotEnabled
+        Notification:Notify({
+            Title = "Walkbot",
+            Content = getgenv().WalkbotEnabled and "Enabled" or "Disabled",
+            Icon = "clipboard",
+        })
+        if not getgenv().WalkbotEnabled then wbClearPathVisual() end
+    end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    Walkbot.path = nil; Walkbot.waypoints = {}; Walkbot.wpIndex = 1
+    Walkbot.target = nil; Walkbot.lastTargetPos = nil; Walkbot.lastPos = nil
+    wbClearPathVisual()
+    local hum = wbGetHumanoid(LocalPlayer.Character)
+    if hum and hum.RigType == Enum.HumanoidRigType.R15 then
+        hum.HipHeight = Walkbot.defaultHipHeight
+    end
+end)
+
+LocalPlayer.CharacterRemoving:Connect(wbClearPathVisual)
+
+-- =========================================================
+--  MAIN HOOK
 -- =========================================================
 task.spawn(function()
     if not checkspecificfunction("hookfunction") then
-        Notification:Notify({ Title = "Warning", Content = "hookfunction is missing, can't start force hit method.", Icon = "bell" })
+        Notification:Notify({ Title = "Warning", Content = "hookfunction is missing.", Icon = "bell" })
         return
     end
     pcall(function()
         local oldFireServer
         oldFireServer = hookfunction(Instance.new("RemoteEvent").FireServer, function(self, ...)
             local args = {...}
-            if tostring(self) == "MainEvent" and getgenv().RageBotEnabled then
-                if getgenv().RageBotMethod == "Event Hook" and checkspecificfunction("hookfunction") then
-                    local action = decryptstring(args[1])
-                    if action == "Shoot" or action == "MeleeHit" then
+            if tostring(self) == "MainEvent" then
+                local action = decryptstring(args[1])
+
+                if getgenv().RageBotEnabled and (action == "Shoot" or action == "MeleeHit") then
+                    if getgenv().RageBotMethod == "Event Hook" then
                         local target = GetClosestPlayer()
                         if target and target.Character and target.Character:FindFirstChild("Head") then
                             local HitPos = getgenv().RageBotHitPos or "Torso"
@@ -428,10 +1009,9 @@ task.spawn(function()
                                     local foolishpart = GetPartNameAtPos(AutoPart)
                                     local tuffpart = target.Character:FindFirstChild(foolishpart)
                                     if tuffpart and tuffpart.Position ~= Vector3.new(0,0,0) then
-                                        args[7] = tuffpart.Position or AutoPart
-                                        if typeof(args[6]) == "Vector3" and typeof(AutoPart) == "Vector3" then
-                                            args[5] = (args[6] - tuffpart.Position).Magnitude
-                                        end
+                                        local resolved = ResolvePosition(target, tuffpart)
+                                        args[7] = resolved or tuffpart.Position
+                                        if typeof(args[6]) == "Vector3" then args[5] = (args[6] - args[7]).Magnitude end
                                     else
                                         args[7] = AutoPart
                                         if typeof(args[6]) == "Vector3" and typeof(AutoPart) == "Vector3" then
@@ -439,9 +1019,11 @@ task.spawn(function()
                                         end
                                     end
                                 else
-                                    args[7] = target.Character[HitPos].Position
-                                    if typeof(args[6]) == "Vector3" then
-                                        args[5] = (args[6] - target.Character[HitPos].Position).Magnitude
+                                    local tpart = target.Character[HitPos]
+                                    if tpart then
+                                        local resolved = ResolvePosition(target, tpart)
+                                        args[7] = resolved or tpart.Position
+                                        if typeof(args[6]) == "Vector3" then args[5] = (args[6] - args[7]).Magnitude end
                                     end
                                 end
                                 args[8] = encryptstring("nil")
@@ -450,6 +1032,14 @@ task.spawn(function()
                         end
                     end
                 end
+
+                if getgenv().RapidFireEnabled and (action == "Shoot" or action == "MeleeHit") then
+                    for i = 1, getgenv().RapidFireCount do
+                        oldFireServer(self, unpack(args))
+                        task.wait(getgenv().RapidFireDelay)
+                    end
+                    return
+                end
             end
             return oldFireServer(self, unpack(args))
         end)
@@ -457,7 +1047,7 @@ task.spawn(function()
 end)
 
 -- =========================================================
---  MOVEMENT MODULE HOOK (RemoveVelocity)
+--  MOVEMENT MODULE HOOK
 -- =========================================================
 task.spawn(function()
     local MovementModule = require(game:GetService("ReplicatedStorage"):WaitForChild("MovementHandler"))
@@ -500,19 +1090,16 @@ task.spawn(function()
 end)
 
 -- =========================================================
---  INFINITE AMMO LOOP
+--  INFINITE AMMO
 -- =========================================================
 task.spawn(function()
     while task.wait(1) do
-        local s, f = pcall(function()
+        local s = pcall(function()
             if getgenv().InfiniteAmmo then
                 game:GetService("ReplicatedStorage"):WaitForChild("Reload"):FireServer()
             end
         end)
-        if not s then
-            Notification:Notify({ Title = "Warning", Content = "Failed to reload for infinite ammo, error: " .. tostring(f), Icon = "bell" })
-            break
-        end
+        if not s then break end
     end
 end)
 
@@ -549,69 +1136,52 @@ local RageMenu     = Window:AddMenu({ Name = "Rage",     Icon = "skull" })
 local AntiAimMenu  = Window:AddMenu({ Name = "Anti Aim", Icon = "shield" })
 local VisualMenu   = Window:AddMenu({ Name = "Visuals",  Icon = "eye" })
 local MiscMenu     = Window:AddMenu({ Name = "Misc",     Icon = "settings" })
+local WalkbotMenu  = Window:AddMenu({ Name = "Walkbot",  Icon = "crosshair" })
 local SettingsMenu = Window:AddMenu({ Name = "Settings", Icon = "cog" })
 
--- =========================================================
---  RAGE MENU
--- =========================================================
+-- RAGE MENU
 do
-    local MainRage    = RageMenu:AddSection({ Position = 'left',   Name = "MAIN" })
+    local MainRage    = RageMenu:AddSection({ Position = 'left',   Name = "HUB RESOLVER" })
     local ExploitSect = RageMenu:AddSection({ Position = 'center', Name = "EXPLOITS" })
     local ExtaSect    = RageMenu:AddSection({ Position = 'right',  Name = "CONFIGURATION" })
 
-    MainRage:AddToggle({
-        Name = "Custom resolver", Flag = "CustomResolverEnabled",
-        Callback = function(v) getgenv().CustomResolverEnabled = v end,
-    })
-
-    MainRage:AddDropdown({
-        Name = "Resolver Mode", Flag = "CustomResolverMode",
-        Values = {"Divine.lua OLD"}, Default = "None",
-        Callback = function(v)
-            getgenv().CustomResolverMode = v
-            if v == "Divine.lua OLD" then
-                getgenv().DivineLuaCorrection = v
-            else
-                getgenv().DivineLuaCorrection = false
+    MainRage:AddToggle({ Name = "HUB Resolver", Flag = "HUBEnabled", Default = true,
+        Callback = function(v) HUB.Enabled = v end })
+    MainRage:AddToggle({ Name = "Show Resolved Cham", Flag = "HUBShowCham", Default = false,
+        Callback = function(v) HUB.ShowCham = v; if not v then for plr in pairs(HUB.chamParts) do removeCham(plr) end end end })
+    MainRage:AddColorPicker({ Name = "Cham Color", Flag = "HUBChamColor", Default = Color3.fromRGB(255, 200, 0),
+        Callback = function(c)
+            HUB.ChamColor = c
+            for plr, part in pairs(HUB.chamParts) do
+                if part then part.Color = c end
+                if HUB.chamHL[plr] then HUB.chamHL[plr].FillColor = c; HUB.chamHL[plr].OutlineColor = c end
             end
-        end,
-    })
+        end })
+    MainRage:AddSlider({ Name = "Strength", Flag = "HUBStr", Default = 1.2, Min = 0, Max = 3, Round = 2,
+        Callback = function(v) HUB.Strength = v end })
+    MainRage:AddSlider({ Name = "FOV Limit", Flag = "HUBFov", Default = 25, Min = 5, Max = 90, Round = 0,
+        Callback = function(v) HUB.FovLimit = v end })
 
     local forcehittoggle = ExploitSect:AddToggle({
         Name = "Force Hit", Flag = "ForceHitEnabled", Risky = true, Option = true,
-        Callback = function(v)
-            getgenv().RageBotEnabled = v
-            if v then disabledefaultragebot() end
-        end,
-    })
-
-    forcehittoggle.Option:AddDropdown({
-        Name = "Method", Flag = "ForceHitMethod",
+        Callback = function(v) getgenv().RageBotEnabled = v; if v then disabledefaultragebot() end end })
+    forcehittoggle.Option:AddDropdown({ Name = "Method", Flag = "ForceHitMethod",
         Values = {"Event Hook"}, Default = "Event Hook",
-        Callback = function(v) getgenv().RageBotMethod = v end,
-    })
-
-    forcehittoggle.Option:AddDropdown({
-        Name = "Hit Position", Flag = "ForceHitHitPos",
+        Callback = function(v) getgenv().RageBotMethod = v end })
+    forcehittoggle.Option:AddDropdown({ Name = "Hit Position", Flag = "ForceHitHitPos",
         Values = {"Auto","Head","Torso","HumanoidRootPart","Arms","Legs"}, Default = "Auto",
         Callback = function(v)
             getgenv().RageBotHitPos = v
             if v == "Auto" and LocalPlayer:FindFirstChild("hitparts") then
                 LocalPlayer.hitparts.Value = "Legs,Torso,Arms,Head"
             end
-        end,
-    })
-
-    forcehittoggle.Option:AddDropdown({
-        Name = "Damage Part", Flag = "ForceHitDamagePart",
+        end })
+    forcehittoggle.Option:AddDropdown({ Name = "Damage Part", Flag = "ForceHitDamagePart",
         Values = {"Head","Torso","HumanoidRootPart","Arms","Legs"}, Default = "Head",
-        Callback = function(v) getgenv().RageBotHitPart = v end,
-    })
+        Callback = function(v) getgenv().RageBotHitPart = v end })
 
-    ExploitSect:AddToggle({
-        Name = "Infinite Ammo", Flag = "InfiniteAmmo", Risky = true,
-        Callback = function(v) getgenv().InfiniteAmmo = v end,
-    })
+    ExploitSect:AddToggle({ Name = "Infinite Ammo", Flag = "InfiniteAmmo", Risky = true,
+        Callback = function(v) getgenv().InfiniteAmmo = v end })
 
     local function setspread(bs, ms, mjs, mins, msps, vi, hi, cm)
         bs = bs or 0.5; ms = ms or 2.5; mjs = mjs or 15; mins = mins or 0.01
@@ -628,67 +1198,45 @@ do
         end
     end
 
-    ExploitSect:AddToggle({
-        Name = "Spread Modifier", Flag = "NoSpread", Risky = true,
+    ExploitSect:AddToggle({ Name = "Spread Modifier", Flag = "NoSpread", Risky = true,
         Callback = function(v)
             getgenv().NoSpread = v
             if v then setspread(0, 0, 0, 0, 0, 0, 0, 0)
             else setspread(0.5, 2.5, 15, 0.01, 15, 2, 0.2, 0.3) end
-        end,
-    })
+        end })
+    ExploitSect:AddSlider({ Name = "Spread Amount", Flag = "SpreadAmount", Default = 0, Min = 0, Max = 15,
+        Callback = function(v) if v and getgenv().NoSpread then setspread(0, 0, 0, v, v, 0, 0, 0) end end })
 
-    ExploitSect:AddSlider({
-        Name = "Spread Amount", Flag = "SpreadAmount", Default = 0, Min = 0, Max = 15,
-        Callback = function(v)
-            if v and getgenv().NoSpread then setspread(0, 0, 0, v, v, 0, 0, 0) end
-        end,
-    })
-
-    ExtaSect:AddToggle({
-        Name = "Disable In-Game Resolver", Flag = "DisableInGameResolver",
+    ExtaSect:AddToggle({ Name = "Disable In-Game Resolver", Flag = "DisableInGameResolver",
         Callback = function(v)
             if v and LocalPlayer:FindFirstChild("ResolverEnabled") then
                 LocalPlayer.ResolverEnabled.Value = false
             elseif not v and LocalPlayer:FindFirstChild("ResolverEnabled") then
                 LocalPlayer.ResolverEnabled.Value = true
             end
-        end,
-    })
+        end })
 
-    ExtaSect:AddToggle({
-        Name = "Divine Lerp", Flag = "DivineLerpEnabled",
-        Callback = function(v) getgenv().DivineLuaLERPEnabled = v end,
-    })
-
-    ExtaSect:AddSlider({
-        Name = "Divine Lerp", Flag = "DivineLerpSpeed", Default = 0.35, Min = 0, Round = 2, Max = 1,
-        Callback = function(v) getgenv().DivineLuaLERPSpeed = v end,
-    })
-
-    ExtaSect:AddSlider({
-        Name = "Divine Bias", Flag = "DivineBiasAngle", Default = math.rad(25), Min = 0, Round = 2, Max = math.rad(90),
-        Callback = function(v) getgenv().DivineLuaBIASAngle = v end,
-    })
+    local RapidFireSec = RageMenu:AddSection({ Position = 'center', Name = "RAPID FIRE" })
+    RapidFireSec:AddToggle({ Name = "Rapid Fire", Flag = "RapidFireEnabled", Default = false,
+        Callback = function(v) getgenv().RapidFireEnabled = v; if v then startRapidFire() else stopRapidFire() end end })
+    RapidFireSec:AddSlider({ Name = "Bullets per Shot", Flag = "RapidFireCount", Default = 5, Min = 1, Max = 20, Round = 0,
+        Callback = function(v) getgenv().RapidFireCount = v end })
+    RapidFireSec:AddSlider({ Name = "Delay (s)", Flag = "RapidFireDelay", Default = 0.01, Min = 0.001, Max = 0.1, Round = 3,
+        Callback = function(v) getgenv().RapidFireDelay = v end })
 end
 
--- =========================================================
---  ANTI-AIM MENU
--- =========================================================
+-- ANTI-AIM MENU
 do
     local AA_General = AntiAimMenu:AddSection({ Position = 'left',   Name = "GENERAL" })
     local AA_Angles  = AntiAimMenu:AddSection({ Position = 'center', Name = "ANGLES" })
     local AA_Extra   = AntiAimMenu:AddSection({ Position = 'right',  Name = "EXTRA" })
 
-    AA_General:AddToggle({
-        Name = "Enable Anti-Aim", Flag = "AntiAimEnabled",
-        Callback = function(v) getgenv().AntiAimEnabled = v end,
-    })
-
-    AA_General:AddDropdown({
-        Name = "Mode", Flag = "AntiAimMode",
-        Values = {"Static","Offset","Center","3-Way","5-Way","Off","Rainbow"}, Default = "Static",
-        Callback = function(v) getgenv().typeofantiaim = v end,
-    })
+    AA_General:AddToggle({ Name = "Enable Anti-Aim", Flag = "AntiAimEnabled",
+        Callback = function(v) getgenv().AntiAimEnabled = v end })
+    AA_General:AddDropdown({ Name = "Mode", Flag = "AntiAimMode",
+        Values = {"Static","Offset","Center","3-Way","5-Way","Off","Rainbow","Unhit"},
+        Default = "Static",
+        Callback = function(v) getgenv().typeofantiaim = v end })
 
     AA_Angles:AddSlider({ Name = "Base Yaw",  Default = 0, Min = -180, Max = 180, Flag = "BaseYaw",  Callback = function(v) getgenv().BaseYawantiaim = v end })
     AA_Angles:AddSlider({ Name = "Yaw Left",  Default = 0, Min = -180, Max = 180, Flag = "YawLeft",  Callback = function(v) getgenv().leftantiaim = v end })
@@ -700,15 +1248,12 @@ do
     AA_Extra:AddSlider({ Name = "Delay", Default = 0, Min = 0.00, Max = 0.011, Flag = "AntiAimDelay", Round = 3, Callback = function(v) getgenv().antiaimdelayness = v end })
 end
 
--- =========================================================
---  VISUALS MENU
--- =========================================================
+-- VISUALS MENU
 do
     local ESP = VisualMenu:AddSection({ Position = 'left', Name = "ESP" })
     ESP:AddToggle({ Name = "Chinese ESP", Flag = "ChineseESP", Callback = function(v) getgenv().ChineseESP = v end })
 
     local PrefixData = { Prefix = " [Rainbow Hub] ", PrefixColor = Color3.fromRGB(255, 0, 0) }
-
     local function applyPrefix()
         for _, v in pairs(getgc(true)) do
             if type(v) == "table" and v.Dev and v.AlphaTester and v.Booster then
@@ -719,17 +1264,13 @@ do
             end
         end
     end
-
     local proxy = setmetatable({}, {
         __index = function(_, key) return PrefixData[key] end,
         __newindex = function(_, key, newValue) PrefixData[key] = newValue end,
     })
-
-    ESP:AddToggle({
-        Name = "Prefix", Flag = "PrefixEnabled",
+    ESP:AddToggle({ Name = "Prefix", Flag = "PrefixEnabled",
         Callback = function(v)
-            if v then
-                applyPrefix()
+            if v then applyPrefix()
             else
                 for _, v2 in pairs(getgc(true)) do
                     if type(v2) == "table" and v2.Dev and v2.AlphaTester and v2.Booster then
@@ -738,23 +1279,15 @@ do
                     end
                 end
             end
-        end,
-    })
-
-    ESP:AddColorPicker({
-        Name = "Prefix Color", Flag = "PrefixColor", Default = Color3.fromRGB(255, 0, 0),
-        Callback = function(color) proxy.PrefixColor = color; applyPrefix() end,
-    })
+        end })
+    ESP:AddColorPicker({ Name = "Prefix Color", Flag = "PrefixColor", Default = Color3.fromRGB(255, 0, 0),
+        Callback = function(color) proxy.PrefixColor = color; applyPrefix() end })
 end
 
--- =========================================================
---  MISC MENU
--- =========================================================
+-- MISC MENU
 do
     local Exploits = MiscMenu:AddSection({ Position = 'left', Name = "EXPLOITS" })
-
-    Exploits:AddToggle({
-        Name = "Remove Velocity", Flag = "RemoveVelocity", Risky = true,
+    Exploits:AddToggle({ Name = "Remove Velocity", Flag = "RemoveVelocity", Risky = true,
         Callback = function(v)
             getgenv().RemoveVelocity = v
             if not getgenv().SpreadHooked and checkspecificfunction("hookmetamethod") then
@@ -769,36 +1302,150 @@ do
                     return oldIndex(t, k)
                 end)
             end
-        end,
-    })
+        end })
+    Exploits:AddToggle({ Name = "Remove Math.Random()", Flag = "RemoveMathRandom", Risky = true,
+        Callback = function(v) getgenv().RemoveMathRandom = v end })
 
-    Exploits:AddToggle({
-        Name = "Remove Math.Random()", Flag = "RemoveMathRandom", Risky = true,
-        Callback = function(v) getgenv().RemoveMathRandom = v end,
-    })
+    local FakeLagSec = MiscMenu:AddSection({ Position = 'center', Name = "FAKE LAG" })
+    FakeLagSec:AddToggle({ Name = "Fake Lag", Flag = "FakeLagEnabled", Default = false,
+        Callback = function(v) getgenv().FakeLagEnabled = v; if v then startFakeLag() else stopFakeLag() end end })
+    FakeLagSec:AddSlider({ Name = "Strength (ms)", Flag = "FakeLagStrength", Default = 200, Min = 50, Max = 1000, Round = 0,
+        Callback = function(v) getgenv().FakeLagStrength = v; if getgenv().FakeLagEnabled then startFakeLag() end end })
+    FakeLagSec:AddSlider({ Name = "Interval (ms)", Flag = "FakeLagInterval", Default = 400, Min = 50, Max = 2000, Round = 0,
+        Callback = function(v) getgenv().FakeLagInterval = v; if getgenv().FakeLagEnabled then startFakeLag() end end })
+    FakeLagSec:AddToggle({ Name = "Show Ghost", Flag = "ShowLagEnabled", Default = false,
+        Callback = function(v) getgenv().ShowLagEnabled = v; if not v then destroyGhost() end end })
+    FakeLagSec:AddColorPicker({ Name = "Ghost Color", Flag = "LagColor", Default = Color3.fromRGB(255, 100, 255),
+        Callback = function(c)
+            getgenv().LagColor = c
+            if fakeLagT.ghostHL then fakeLagT.ghostHL.FillColor = c; fakeLagT.ghostHL.OutlineColor = c end
+            if fakeLagT.ghostModel then
+                for _, p in ipairs(fakeLagT.ghostModel:GetChildren()) do
+                    if p:IsA("BasePart") then p.Color = c end
+                end
+            end
+        end })
+    FakeLagSec:AddSlider({ Name = "Ghost Fill Alpha", Flag = "LagFillAlpha", Default = 0.5, Min = 0, Max = 1, Round = 2,
+        Callback = function(c)
+            getgenv().LagFillAlpha = c
+            if fakeLagT.ghostHL then fakeLagT.ghostHL.FillTransparency = c end
+        end })
+    FakeLagSec:AddSlider({ Name = "Ghost Part Alpha", Flag = "LagPartAlpha", Default = 0.4, Min = 0, Max = 1, Round = 2,
+        Callback = function(c)
+            getgenv().LagPartAlpha = c
+            if fakeLagT.ghostModel then
+                for _, p in ipairs(fakeLagT.ghostModel:GetChildren()) do
+                    if p:IsA("BasePart") then p.Transparency = c end
+                end
+            end
+        end })
 end
 
--- =========================================================
---  SETTINGS MENU
--- =========================================================
+-- WALKBOT MENU
 do
-    local MenuSect = SettingsMenu:AddSection({ Position = 'left', Name = "Menu" })
-    MenuSect:AddKeybind({
-        Name = "Keybind", Flag = "MenuToggleKey", Default = Enum.KeyCode.Insert,
-        Callback = function(v) if v ~= nil then getgenv().OpenKey = v end end,
-    })
-    MenuSect:AddToggle({
-        Name = "Ignore Game Processed", Flag = "IgnoreGP",
-        Callback = function(v) getgenv().IgnoreGP = v end,
-    })
+    local WBSec = WalkbotMenu:AddSection({ Position = 'left', Name = "WALKBOT" })
+
+    WBSec:AddToggle({ Name = "Enable Walkbot", Flag = "WalkbotEnabled", Default = false,
+        Callback = function(v)
+            getgenv().WalkbotEnabled = v
+            if not v then wbClearPathVisual() end
+        end })
+
+    WBSec:AddKeybind({ Name = "Toggle Bind", Flag = "WalkbotBind", Default = Enum.KeyCode.K,
+        Callback = function(v) if v ~= nil then getgenv().WalkbotBind = v end end })
+
+    WBSec:AddSlider({ Name = "Walk Speed", Flag = "WalkbotSpeed", Default = 24, Min = 10, Max = 600, Round = 0,
+        Callback = function(v) getgenv().WalkbotSpeed = v end })
+
+    WBSec:AddToggle({ Name = "Auto Jump", Flag = "WalkbotJump", Default = true,
+        Callback = function(v) getgenv().WalkbotJump = v end })
+
+    WBSec:AddToggle({ Name = "Auto Crouch", Flag = "WalkbotCrouch", Default = true,
+        Callback = function(v) getgenv().WalkbotCrouch = v end })
+
+    WBSec:AddToggle({ Name = "Show Path", Flag = "WalkbotShowPath", Default = true,
+        Callback = function(v)
+            getgenv().WalkbotShowPath = v
+            if not v then wbClearPathVisual() end
+        end })
+
+    WBSec:AddColorPicker({ Name = "Path Color", Flag = "WalkbotPathColor", Default = Color3.fromRGB(0, 220, 80),
+        Callback = function(c)
+            getgenv().WalkbotPathColor = c
+            for _, p in ipairs(Walkbot.pathParts) do
+                if p and p.Parent then p.Color = c end
+            end
+        end })
+
+    WBSec:AddButton({ Name = "Reset Walkbot State", Callback = function()
+        Walkbot.path = nil
+        Walkbot.waypoints = {}
+        Walkbot.wpIndex = 1
+        Walkbot.target = nil
+        wbClearPathVisual()
+        Notification:Notify({ Title = "Walkbot", Content = "State reset", Icon = "clipboard" })
+    end })
 end
 
--- =========================================================
---  AUTO-REJOIN ON KICK
--- =========================================================
+-- SETTINGS MENU
+do
+    local CharSect = SettingsMenu:AddSection({ Position = 'left', Name = "CHARACTER" })
+
+    CharSect:AddSlider({ Name = "WalkSpeed", Flag = "PlayerWalkSpeed", Default = 16, Min = 8, Max = 600, Round = 0,
+        Callback = function(v)
+            getgenv().PlayerWalkSpeed = v
+            local char = LocalPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = v end
+        end })
+
+    CharSect:AddSlider({ Name = "Jump Power", Flag = "PlayerJumpPower", Default = 50, Min = 20, Max = 600, Round = 0,
+        Callback = function(v)
+            getgenv().PlayerJumpPower = v
+            local char = LocalPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+            if hum and hum.UseJumpPower then hum.JumpPower = v end
+        end })
+
+    CharSect:AddButton({ Name = "Apply Now", Callback = function()
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.WalkSpeed = getgenv().PlayerWalkSpeed
+            if hum.UseJumpPower then hum.JumpPower = getgenv().PlayerJumpPower end
+        end
+        Notification:Notify({ Title = "Character", Content = "Applied", Icon = "clipboard" })
+    end })
+
+    CharSect:AddButton({ Name = "Reset to Default", Callback = function()
+        getgenv().PlayerWalkSpeed = 16
+        getgenv().PlayerJumpPower = 50
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.WalkSpeed = 16
+            if hum.UseJumpPower then hum.JumpPower = 50 end
+        end
+        Notification:Notify({ Title = "Character", Content = "Reset to default", Icon = "clipboard" })
+    end })
+
+    local MenuSect = SettingsMenu:AddSection({ Position = 'center', Name = "Menu" })
+    MenuSect:AddKeybind({ Name = "Menu Keybind", Flag = "MenuToggleKey", Default = Enum.KeyCode.Insert,
+        Callback = function(v) if v ~= nil then getgenv().OpenKey = v end end })
+    MenuSect:AddToggle({ Name = "Ignore Game Processed", Flag = "IgnoreGP",
+        Callback = function(v) getgenv().IgnoreGP = v end })
+end
+
+-- AUTO-REJOIN
 game:GetService("GuiService").ErrorMessageChanged:Connect(function()
     task.wait(0.5)
     game:GetService("TeleportService"):Teleport(game.PlaceId, LocalPlayer)
 end)
 
-print("[penablox] loaded successfully")
+Notification:Notify({
+    Title = "RAINBOW HUB",
+    Content = "Walkbot bind: " .. getgenv().WalkbotBind.Name,
+    Icon = "clipboard",
+})
+
+print("[penablox] loaded — HUB v5.2 | WalkSpeed 600 max")
